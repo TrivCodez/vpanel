@@ -641,6 +641,7 @@ document.addEventListener('click', (e) => {
 
 // Tmate
 let tmateSshCmd = '';
+let mobKbSending = false;
 window.startTmate = function() {
     const panel = document.getElementById('tmatePanel');
     const loading = document.getElementById('tmateLoading');
@@ -714,17 +715,15 @@ window.toggleMobileKeyboard = function() {
 };
 
 window.mobKbText = function(t) {
-    if (!rfb || !connected) return;
+    if (!rfb || !connected || !t || mobKbSending) return;
+    mobKbSending = true;
+    const input = document.getElementById('mobKbInput');
+    if (input) input.value = '';
+    updateMobKbSendBtn();
     const chars = t.split('');
     let i = 0;
     function sendNext() {
-        if (i >= chars.length) {
-            const input = document.getElementById('mobKbInput');
-            if (input) input.value = '';
-            updateMobKbSendBtn();
-            mobKbInputFocus();
-            return;
-        }
+        if (i >= chars.length) { mobKbSending = false; mobKbInputFocus(); return; }
         const c = chars[i];
         const code = c.charCodeAt(0);
         try {
@@ -732,9 +731,9 @@ window.mobKbText = function(t) {
             setTimeout(function() {
                 try { rfb.sendKey(code, 0); } catch(e) {}
                 i++;
-                setTimeout(sendNext, 60);
-            }, 40);
-        } catch(e) { i++; setTimeout(sendNext, 60); }
+                setTimeout(sendNext, 80);
+            }, 60);
+        } catch(e) { i++; if (i >= chars.length) mobKbSending = false; setTimeout(sendNext, 80); }
     }
     sendNext();
 };
@@ -761,8 +760,11 @@ window.mobKbSpecial = function(key) {
 
 window.sendMobKbText = function() {
     const input = document.getElementById('mobKbInput');
-    if (!input || !input.value) return;
-    mobKbText(input.value);
+    if (!input || !input.value || mobKbSending) return;
+    const text = input.value;
+    input.value = '';
+    updateMobKbSendBtn();
+    mobKbText(text);
     showToast('Text sent to VM', 'success');
 };
 
