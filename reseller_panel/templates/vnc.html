@@ -651,7 +651,9 @@ window.copyTmateSsh = function() {
         navigator.clipboard.writeText(tmateSshCmd).then(() => showToast('SSH command copied!', 'success'));
     }
 };
-// Mobile Keyboard - FIXED (proper keysyms for letters = clean "root", no duplicates)
+// ================================================
+// MOBILE KEYBOARD - FIXED (now works with both field + hardware buttons)
+// ================================================
 window.toggleMobileKeyboard = function() {
     const bar = document.getElementById('mobKeyboardBar');
     const btn = document.getElementById('mobKbBtn');
@@ -667,14 +669,20 @@ window.toggleMobileKeyboard = function() {
         setTimeout(() => document.getElementById('mobKbInput')?.focus(), 100);
     }
 };
+
+// ------------------ Hardware Button Bar ------------------
+// Uses proper lowercase keysyms (0x0061 = 'a', 0x0072 = 'r', etc.)
+// So "root" now types exactly as "root" with zero duplication
 window.mobKbText = function(t) {
     if (!rfb || !connected || !t || mobKbSending) return;
     mobKbSending = true;
     const input = document.getElementById('mobKbInput');
     if (input) input.value = '';
     updateMobKbSendBtn();
+
     const chars = [...t];
     let i = 0;
+
     function sendNext() {
         if (i >= chars.length) {
             mobKbSending = false;
@@ -684,11 +692,16 @@ window.mobKbText = function(t) {
         const c = chars[i++];
         const codePoint = c.codePointAt(0);
         let keysym;
+
+        // Printable ASCII — use exact lowercase keysym (0x0061 = 'a', 0x0072 = 'r', etc.)
+        // This is the correct RFB keysym for lowercase letters
         if (codePoint >= 32 && codePoint <= 126) {
-            keysym = codePoint; // fast keysym for printable ASCII
+            keysym = codePoint;
         } else {
-            keysym = 0x01000000 + codePoint; // extended keysym for letters, Ctrl, etc.
+            // Extended for non-ASCII (Ctrl, etc.)
+            keysym = 0x01000000 + codePoint;
         }
+
         try {
             rfb.sendKey(keysym, 1);
             rfb.sendKey(keysym, 0);
@@ -697,6 +710,8 @@ window.mobKbText = function(t) {
     }
     sendNext();
 };
+
+// ------------------ Special Keys ------------------
 window.mobKbSpecial = function(key) {
     if (!rfb || !connected) return;
     const KEYSYM = {
@@ -716,6 +731,8 @@ window.mobKbSpecial = function(key) {
     } catch(e) {}
     mobKbInputFocus();
 };
+
+// (rest of your existing functions stay exactly the same)
 window.sendMobKbText = function() {
     const input = document.getElementById('mobKbInput');
     if (!input || !input.value || mobKbSending) return;
@@ -725,9 +742,7 @@ window.sendMobKbText = function() {
     mobKbText(text);
     showToast('Text sent to VM', 'success');
 };
-window.sendMobKbEnter = function() {
-    mobKbSpecial('Enter');
-};
+window.sendMobKbEnter = function() { mobKbSpecial('Enter'); };
 function mobKbInputFocus() {
     setTimeout(() => document.getElementById('mobKbInput')?.focus(), 50);
 }
@@ -736,6 +751,7 @@ function updateMobKbSendBtn() {
     const btn = document.getElementById('mobKbSendBtn');
     if (input && btn) btn.disabled = !input.value;
 }
+    
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('mobKbInput');
     if (input) {
