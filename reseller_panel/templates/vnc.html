@@ -728,12 +728,10 @@ window.mobKbText = function(t) {
         const code = c.charCodeAt(0);
         try {
             rfb.sendKey(code, 1);
-            setTimeout(function() {
-                try { rfb.sendKey(code, 0); } catch(e) {}
-                i++;
-                setTimeout(sendNext, 80);
-            }, 60);
-        } catch(e) { i++; if (i >= chars.length) mobKbSending = false; setTimeout(sendNext, 80); }
+            rfb.sendKey(code, 0);
+            i++;
+            setTimeout(sendNext, 60);
+        } catch(e) { i++; setTimeout(sendNext, 60); }
     }
     sendNext();
 };
@@ -753,7 +751,7 @@ window.mobKbSpecial = function(key) {
     const sym = KEYSYM[key] || key.charCodeAt(0);
     try {
         rfb.sendKey(sym, 1);
-        setTimeout(() => { try { rfb.sendKey(sym, 0); } catch(e) {} }, 50);
+        rfb.sendKey(sym, 0);
     } catch(e) {}
     mobKbInputFocus();
 };
