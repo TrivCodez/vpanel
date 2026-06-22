@@ -713,16 +713,14 @@ window.toggleMobileKeyboard = function() {
     }
 };
 
-// FIX: Use Unicode keysyms (0x01000000 + codepoint) so every character —
-// lowercase, uppercase, symbols — maps correctly. The old charCodeAt approach
-// sent wrong keysyms for anything above basic ASCII and caused doubles/drops.
+// ✅ FIXED: Use ASCII keysym for printable characters to prevent duplication
 window.mobKbText = function(t) {
     if (!rfb || !connected || !t || mobKbSending) return;
     mobKbSending = true;
     const input = document.getElementById('mobKbInput');
     if (input) input.value = '';
     updateMobKbSendBtn();
-    const chars = [...t]; // spread handles surrogate pairs / emoji correctly
+    const chars = [...t]; // spread handles surrogate pairs correctly
     let i = 0;
     function sendNext() {
         if (i >= chars.length) {
@@ -731,9 +729,15 @@ window.mobKbText = function(t) {
             return;
         }
         const c = chars[i++];
-        // 0x01000000 + Unicode codepoint is the standard X11 keysym for any
-        // Unicode character; noVNC passes it straight through to the VNC server.
-        const keysym = 0x01000000 + c.codePointAt(0);
+        const codePoint = c.codePointAt(0);
+        let keysym;
+        // Printable ASCII (space to '~'): use ASCII code as keysym (no duplication)
+        if (codePoint >= 32 && codePoint <= 126) {
+            keysym = codePoint;
+        } else {
+            // Non‑ASCII, control characters, or Unicode: use extended keysym
+            keysym = 0x01000000 + codePoint;
+        }
         try {
             rfb.sendKey(keysym, 1);
             rfb.sendKey(keysym, 0);
