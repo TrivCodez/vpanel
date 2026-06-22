@@ -939,36 +939,58 @@ def api_vm_tmate(uuid):
     ssh_port = vm['ssh_port'] or 22
     username = vm['username'] or 'root'
     password = vm['password'] or ''
+    tmate_cmd = (
+        'which tmate 2>/dev/null || (apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tmate); '
+        'export TMATE_SOCK=/tmp/tmate.${USER}.sock; '
+        'tmate -S ${TMATE_SOCK} new-session -d 2>&1; '
+        'sleep 2; '
+        'tmate -S ${TMATE_SOCK} wait tmate-ready 2>&1 || true; '
+        'tmate -S ${TMATE_SOCK} display -p "#{tmate_ssh}" 2>&1; '
+        'tmate -S ${TMATE_SOCK} display -p "#{tmate_web}" 2>&1'
+    )
     try:
-        import paramiko
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect('127.0.0.1', port=ssh_port, username=username, password=password, timeout=10)
-        cmd = (
-            'which tmate 2>/dev/null || (apt-get update -qq && apt-get install -y -qq tmate); '
-            'tmate -S /tmp/tmate.sock new-session -d 2>/dev/null; '
-            'tmate -S /tmp/tmate.sock wait tmate-ready 2>/dev/null; '
-            'tmate -S /tmp/tmate.sock display -p "#{tmate_ssh}" 2>/dev/null; '
-            'tmate -S /tmp/tmate.sock display -p "#{tmate_web}" 2>/dev/null'
-        )
-        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=25)
-        output = stdout.read().decode('utf-8', errors='replace').strip()
-        ssh.close()
-        lines = output.split('\n')
-        ssh_cmd = ''
-        web_url = ''
-        for line in lines:
-            line = line.strip()
-            if line.startswith('ssh '):
-                ssh_cmd = line
-            elif line.startswith('https://'):
-                web_url = line
-        if ssh_cmd:
-            log_activity(user['id'], f'tmate session created for VM {uuid}')
-            return jsonify({'success': True, 'ssh_command': ssh_cmd, 'web_url': web_url})
-        return jsonify({'success': False, 'error': 'Failed to get tmate connection. Is tmate installed on the VM?'})
+        # try sshpass first (same method as terminal WebSocket)
+        result = subprocess.run([
+            'sshpass', '-p', password,
+            'ssh', '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-p', str(ssh_port),
+            f'{username}@127.0.0.1',
+            tmate_cmd
+        ], capture_output=True, text=True, timeout=30)
+        output = result.stdout.strip()
+        err = result.stderr.strip()
+    except FileNotFoundError:
+        # sshpass not installed, fall back to paramiko
+        try:
+            import paramiko
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect('127.0.0.1', port=ssh_port, username=username, password=password, timeout=10)
+            stdin, stdout, stderr = ssh.exec_command(f'bash -c \'{tmate_cmd}\'', timeout=30)
+            output = stdout.read().decode('utf-8', errors='replace').strip()
+            err = stderr.read().decode('utf-8', errors='replace').strip()
+            ssh.close()
+        except paramiko.AuthenticationException:
+            return jsonify({'success': False, 'error': f'SSH auth failed for {username}@VM (pw: {password}). Try resetting password in VM settings.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'tmate SSH error: {str(e)}'})
     except Exception as e:
-        return jsonify({'success': False, 'error': f'tmate failed: {str(e)}'})
+        return jsonify({'success': False, 'error': f'tmate error: {str(e)}'})
+    lines = output.split('\n')
+    ssh_cmd = ''
+    web_url = ''
+    for line in lines:
+        line = line.strip()
+        if line.startswith('ssh '):
+            ssh_cmd = line
+        elif line.startswith('https://'):
+            web_url = line
+    if ssh_cmd:
+        log_activity(user['id'], f'tmate session created for VM {uuid}')
+        return jsonify({'success': True, 'ssh_command': ssh_cmd, 'web_url': web_url})
+    err_detail = (err or '')[:500]
+    return jsonify({'success': False, 'error': f'tmate: {err_detail}' if err_detail else 'tmate failed. Does VM have internet?'})
 
 
 @app.route('/login/2fa', methods=['GET', 'POST'])

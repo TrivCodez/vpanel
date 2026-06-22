@@ -718,23 +718,25 @@ window.mobKbText = function(t) {
     const chars = t.split('');
     let i = 0;
     function sendNext() {
-        if (i >= chars.length) return;
+        if (i >= chars.length) {
+            const input = document.getElementById('mobKbInput');
+            if (input) input.value = '';
+            updateMobKbSendBtn();
+            mobKbInputFocus();
+            return;
+        }
         const c = chars[i];
         const code = c.charCodeAt(0);
         try {
             rfb.sendKey(code, 1);
-            setTimeout(() => {
+            setTimeout(function() {
                 try { rfb.sendKey(code, 0); } catch(e) {}
                 i++;
-                setTimeout(sendNext, 15);
-            }, 15);
-        } catch(e) { i++; setTimeout(sendNext, 15); }
+                setTimeout(sendNext, 60);
+            }, 40);
+        } catch(e) { i++; setTimeout(sendNext, 60); }
     }
     sendNext();
-    const input = document.getElementById('mobKbInput');
-    if (input) input.value = '';
-    updateMobKbSendBtn();
-    mobKbInputFocus();
 };
 
 window.mobKbSpecial = function(key) {
@@ -752,7 +754,7 @@ window.mobKbSpecial = function(key) {
     const sym = KEYSYM[key] || key.charCodeAt(0);
     try {
         rfb.sendKey(sym, 1);
-        setTimeout(() => { try { rfb.sendKey(sym, 0); } catch(e) {} }, 30);
+        setTimeout(() => { try { rfb.sendKey(sym, 0); } catch(e) {} }, 50);
     } catch(e) {}
     mobKbInputFocus();
 };
