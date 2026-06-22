@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in">
+    <div>
+        <h1 class="text-2xl font-bold text-white">{{ vm.name }}</h1>
+        <p class="text-gray-500 mt-1">{{ vm.os_type }}/{{ vm.os_version }} · SSH Terminal</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <span class="badge {{ 'badge-success' if vm.status=='running' else 'badge-danger' }}">
+            <span class="status-dot {{ vm.status }}"></span>{{ vm.status }}
+        </span>
+        <a href="/vms/{{ vm.uuid }}" class="text-blue-400 hover:text-blue-300 text-sm">← Back</a>
+    </div>
+</div>
+
+{% if vm.status == 'running' %}
+<div class="card rounded-xl overflow-hidden animate-in" style="background:#080b14;">
+    <div class="bg-black/60 border-b border-white/5 px-4 py-2 flex items-center gap-3">
+        <span id="termStatus" class="text-xs text-yellow-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>Connecting...
+        </span>
+        <div class="w-px h-4 bg-white/10"></div>
+        <span class="text-xs text-gray-600">ssh {{ vm.username }}@localhost -p {{ vm.ssh_port }}</span>
+        <button onclick="startTmate()" class="ml-2 px-2 py-1 rounded text-[11px] bg-green-500/10 text-green-400 hover:bg-green-500/20 transition flex items-center gap-1.5"><i class="fas fa-link text-[10px]"></i>Tmate</button>
+        <button onclick="document.getElementById('terminalContainer').requestFullscreen()" class="ml-auto px-2 py-1 rounded text-[11px] bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+    <div id="terminalContainer" style="height:550px;background:#000;position:relative;">
+        <div id="termOverlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:10;flex-direction:column;gap:12px;">
+            <div class="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div class="text-gray-500 text-sm">Connecting to SSH...</div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card rounded-xl p-8 animate-in text-center">
+    <div class="text-5xl mb-4 text-gray-700"><i class="fas fa-terminal"></i></div>
+    <h3 class="text-lg font-bold text-white mb-2">VM is not running</h3>
+    <p class="text-gray-500 mb-4">Start the VM to access the SSH terminal.</p>
+    <button onclick="if(!confirm('Start this VM?'))return;const btn=this;btn.disabled=true;btn.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i> Starting...';fetch('/api/vm/{{ vm.uuid }}/start',{method:'POST'}).then(r=>r.json()).then(d=>{showToast(d.message||'Started',d.success?'success':'error');if(d.success)setTimeout(()=>location.reload(),2000);else{btn.disabled=false;btn.innerHTML='<i class=\'fas fa-play\'></i>Start VM';}})" class="btn-success px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
+        <i class="fas fa-play"></i>Start VM
+    </button>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.css">
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@1/lib/addon-fit.js"></script>
+
+<script>
+(function() {
+    const container = document.getElementById('terminalContainer');
+    const overlay = document.getElementById('termOverlay');
+    const statusEl = document.getElementById('termStatus');
+
+    function setStatus(text, type) {
+        if (!statusEl) return;
+        const dot = statusEl.querySelector('span');
+        statusEl.innerHTML = '<span class="w-2 h-2 rounded-full ' + (type === 'ok' ? 'bg-green-400' : type === 'err' ? 'bg-red-400' : 'bg-yellow-400 animate-pulse') + '"></span>' + text;
+    }
+
+    {% if vm.status == 'running' %}
+    const term = new Terminal({
+        cursorBlink: true,
+        cursorStyle: 'block',
+        fontSize: 14,
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        theme: { background: '#000000', foreground: '#e2e8f0', cursor: '#60a5fa', selection: 'rgba(59,130,246,0.3)' },
+        allowTransparency: true,
+        bellStyle: 'none',
+        scrollback: 5000
+    });
+
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(container);
+    fitAddon.fit();
+
+    if (overlay) overlay.style.display = 'none';
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = protocol + '//' + window.location.host + '/ssh/{{ vm.uuid }}';
+    let socket = null;
+    let connected = false;
+
+    function connect() {
+        try {
+            if (socket) { try { socket.close(); } catch(e) {} }
+            socket = new WebSocket(wsUrl);
+            socket.binaryType = 'arraybuffer';
+
+            socket.onopen = function() {
+                connected = true;
+                setStatus('Connected', 'ok');
+                term.focus();
+            };
+
+            socket.onmessage = function(event) {
+                if (event.data instanceof ArrayBuffer) {
+                    term.write(new Uint8Array(event.data));
+                } else if (typeof event.data === 'string') {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'status') {
+                            setStatus(msg.message, msg.level || 'info');
+                        }
+                    } catch(e) {
+                        term.write(event.data);
+                    }
+                }
+            };
+
+            socket.onclose = function() {
+                connected = false;
+                setStatus('Disconnected', 'err');
+            };
+
+            socket.onerror = function() {
+                setStatus('Connection error', 'err');
+            };
+        } catch(e) {
+            setStatus('Failed: ' + e.message, 'err');
+        }
+    }
+
+    term.onData(function(data) {
+        if (socket && connected && socket.readyState === WebSocket.OPEN) {
+            socket.send(data);
+        }
+    });
+
+    term.onResize(function(size) {
+        if (socket && connected && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({resize: [size.cols, size.rows]}));
+        }
+    });
+
+    window.addEventListener('resize', function() {
+        try {
+            fitAddon.fit();
+        } catch(e) {}
+    });
+
+    const resizeObserver = new ResizeObserver(function() {
+        try {
+            fitAddon.fit();
+        } catch(e) {}
+    });
+    resizeObserver.observe(container);
+
+    connect();
+    {% endif %}
+})();
+
+// Tmate
+let tmateSshCmdTerm = '';
+window.startTmate = function() {
+    const panel = document.getElementById('tmatePanel');
+    const loading = document.getElementById('tmateLoading');
+    const result = document.getElementById('tmateResult');
+    const error = document.getElementById('tmateError');
+    if (panel) panel.classList.remove('hidden');
+    if (loading) loading.classList.remove('hidden');
+    if (result) result.classList.add('hidden');
+    if (error) error.classList.add('hidden');
+    fetch('/api/vm/{{ vm.uuid }}/tmate', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (loading) loading.classList.add('hidden');
+            if (d.success) {
+                if (result) result.classList.remove('hidden');
+                tmateSshCmdTerm = d.ssh_command || '';
+                const cmdEl = document.getElementById('tmateSshCmd');
+                if (cmdEl) cmdEl.textContent = tmateSshCmdTerm;
+                if (d.web_url) {
+                    const webEl = document.getElementById('tmateWebUrl');
+                    if (webEl) {
+                        webEl.classList.remove('hidden');
+                        const urlEl = webEl.querySelector('.font-mono');
+                        if (urlEl) urlEl.textContent = d.web_url;
+                    }
+                }
+                showToast('Tmate session ready', 'success');
+            } else {
+                if (error) error.classList.remove('hidden');
+                const msgEl = document.getElementById('tmateErrorMsg');
+                if (msgEl) msgEl.textContent = d.error || 'Failed to start tmate';
+            }
+        })
+        .catch(e => {
+            if (loading) loading.classList.add('hidden');
+            if (error) error.classList.remove('hidden');
+            const msgEl = document.getElementById('tmateErrorMsg');
+            if (msgEl) msgEl.textContent = e.message || 'Connection error';
+        });
+};
+window.closeTmate = function() {
+    const panel = document.getElementById('tmatePanel');
+    if (panel) panel.classList.add('hidden');
+};
+window.copyTmateSsh = function() {
+    if (tmateSshCmdTerm) {
+        navigator.clipboard.writeText(tmateSshCmdTerm).then(() => showToast('SSH command copied!', 'success'));
+    }
+};
+</script>
+
+<!-- Tmate Modal -->
+<div id="tmatePanel" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-[#0c1020] border border-green-500/30 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-green-500/15 flex items-center justify-center text-green-400"><i class="fas fa-terminal"></i></div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Tmate Session</h3>
+                    <p id="tmateStatus" class="text-xs text-gray-500">Initializing...</p>
+                </div>
+            </div>
+            <button onclick="closeTmate()" class="text-gray-600 hover:text-white transition p-1"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div id="tmateBody" class="p-5">
+            <div id="tmateLoading" class="flex flex-col items-center gap-3 py-8">
+                <div class="w-10 h-10 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                <div class="text-sm text-gray-500">Connecting to VM and starting tmate...</div>
+            </div>
+            <div id="tmateResult" class="hidden space-y-4">
+                <div class="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                    <p class="text-xs text-green-400 font-semibold mb-2 flex items-center gap-1.5"><i class="fas fa-circle-check"></i>Session Ready</p>
+                    <p class="text-xs text-gray-500 mb-2">Use this SSH command to connect from anywhere:</p>
+                    <div id="tmateSshCmd" class="bg-black/60 p-3 rounded-xl text-sm font-mono text-green-400 select-all break-all border border-green-500/10"></div>
+                    <button onclick="copyTmateSsh()" class="mt-2 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"><i class="fas fa-copy"></i>Copy SSH command</button>
+                </div>
+                <div id="tmateWebUrl" class="hidden p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                    <p class="text-xs text-blue-400 font-semibold mb-2 flex items-center gap-1.5"><i class="fas fa-globe"></i>Web Terminal</p>
+                    <div class="bg-black/60 p-3 rounded-xl text-sm font-mono text-blue-400 select-all break-all border border-blue-500/10"></div>
+                </div>
+                <p class="text-xs text-gray-600">Session runs until you close it or the VM stops.</p>
+            </div>
+            <div id="tmateError" class="hidden flex flex-col items-center gap-3 py-8">
+                <div class="text-4xl text-red-400"><i class="fas fa-triangle-exclamation"></i></div>
+                <div id="tmateErrorMsg" class="text-sm text-red-400 text-center"></div>
+                <button onclick="startTmate()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-green-500/10 text-green-400 hover:bg-green-500/20 transition">Retry</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
