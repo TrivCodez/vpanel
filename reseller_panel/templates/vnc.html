@@ -218,7 +218,7 @@
             <button onclick="mobKbSpecial('Tab')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Tab</button>
             <button onclick="mobKbSpecial('BackSpace')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Bksp</button>
             <button onclick="mobKbSpecial('Delete')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Del</button>
-            <button onclick="mobKbText(' ') && mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Space</button>
+            <button onclick="mobKbText(' ')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Space</button>
             <button onclick="sendKeyCombo(['ControlLeft','c']);closeKeysDropdown();mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Ctrl+C</button>
             <button onclick="sendKeyCombo(['ControlLeft','d']);closeKeysDropdown();mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Ctrl+D</button>
             <button onclick="sendKeyCombo(['ControlLeft','z']);closeKeysDropdown();mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Ctrl+Z</button>
@@ -466,7 +466,6 @@ function startBandwidthMonitor() {
         if (!connected || !rfb) return;
         try {
             if (rfb._sock && rfb._sock._websocket) {
-                const ws = rfb._sock._websocket;
                 const now = Date.now();
                 if (connStartTime) {
                     const elapsed = Math.floor((now - connStartTime) / 1000);
@@ -714,24 +713,32 @@ window.toggleMobileKeyboard = function() {
     }
 };
 
+// FIX: Use Unicode keysyms (0x01000000 + codepoint) so every character —
+// lowercase, uppercase, symbols — maps correctly. The old charCodeAt approach
+// sent wrong keysyms for anything above basic ASCII and caused doubles/drops.
 window.mobKbText = function(t) {
     if (!rfb || !connected || !t || mobKbSending) return;
     mobKbSending = true;
     const input = document.getElementById('mobKbInput');
     if (input) input.value = '';
     updateMobKbSendBtn();
-    const chars = t.split('');
+    const chars = [...t]; // spread handles surrogate pairs / emoji correctly
     let i = 0;
     function sendNext() {
-        if (i >= chars.length) { mobKbSending = false; mobKbInputFocus(); return; }
-        const c = chars[i];
-        const code = c.charCodeAt(0);
+        if (i >= chars.length) {
+            mobKbSending = false;
+            mobKbInputFocus();
+            return;
+        }
+        const c = chars[i++];
+        // 0x01000000 + Unicode codepoint is the standard X11 keysym for any
+        // Unicode character; noVNC passes it straight through to the VNC server.
+        const keysym = 0x01000000 + c.codePointAt(0);
         try {
-            rfb.sendKey(code, 1);
-            rfb.sendKey(code, 0);
-            i++;
-            setTimeout(sendNext, 60);
-        } catch(e) { i++; setTimeout(sendNext, 60); }
+            rfb.sendKey(keysym, 1);
+            rfb.sendKey(keysym, 0);
+        } catch(e) {}
+        setTimeout(sendNext, 30);
     }
     sendNext();
 };
@@ -748,7 +755,7 @@ window.mobKbSpecial = function(key) {
         'F6': 0xFFC3, 'F7': 0xFFC4, 'F8': 0xFFC5, 'F9': 0xFFC6,
         'F10': 0xFFC7, 'F11': 0xFFC8, 'F12': 0xFFC9
     };
-    const sym = KEYSYM[key] || key.charCodeAt(0);
+    const sym = KEYSYM[key] || (0x01000000 + key.codePointAt(0));
     try {
         rfb.sendKey(sym, 1);
         rfb.sendKey(sym, 0);
