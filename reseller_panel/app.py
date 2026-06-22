@@ -940,19 +940,20 @@ def api_vm_tmate(uuid):
     username = vm['username'] or 'root'
     password = vm['password'] or ''
     try:
-        result = subprocess.run([
-            'sshpass', '-p', password,
-            'ssh', '-o', 'StrictHostKeyChecking=no',
-            '-o', 'UserKnownHostsFile=/dev/null',
-            '-p', str(ssh_port),
-            f'{username}@localhost',
+        import paramiko
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect('127.0.0.1', port=ssh_port, username=username, password=password, timeout=10)
+        cmd = (
             'which tmate 2>/dev/null || (apt-get update -qq && apt-get install -y -qq tmate); '
             'tmate -S /tmp/tmate.sock new-session -d 2>/dev/null; '
             'tmate -S /tmp/tmate.sock wait tmate-ready 2>/dev/null; '
             'tmate -S /tmp/tmate.sock display -p "#{tmate_ssh}" 2>/dev/null; '
             'tmate -S /tmp/tmate.sock display -p "#{tmate_web}" 2>/dev/null'
-        ], capture_output=True, text=True, timeout=30)
-        output = result.stdout.strip()
+        )
+        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=25)
+        output = stdout.read().decode('utf-8', errors='replace').strip()
+        ssh.close()
         lines = output.split('\n')
         ssh_cmd = ''
         web_url = ''
@@ -966,8 +967,6 @@ def api_vm_tmate(uuid):
             log_activity(user['id'], f'tmate session created for VM {uuid}')
             return jsonify({'success': True, 'ssh_command': ssh_cmd, 'web_url': web_url})
         return jsonify({'success': False, 'error': 'Failed to get tmate connection. Is tmate installed on the VM?'})
-    except subprocess.TimeoutExpired:
-        return jsonify({'success': False, 'error': 'Timed out connecting to VM'})
     except Exception as e:
         return jsonify({'success': False, 'error': f'tmate failed: {str(e)}'})
 
