@@ -12,7 +12,6 @@
         <a href="/vms/{{ vm.uuid }}" class="text-blue-400 hover:text-blue-300 text-sm">← Back</a>
     </div>
 </div>
-
 {% if vm.status == 'running' %}
 <div class="card rounded-xl overflow-hidden mb-6 animate-in" style="background:#080b14;">
     <!-- Management Toolbar -->
@@ -22,9 +21,7 @@
             <span id="connStatus" class="text-xs text-yellow-400 flex items-center gap-1.5 mr-3 shrink-0">
                 <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>Initializing
             </span>
-
             <div class="w-px h-5 bg-white/10 mx-1"></div>
-
             <!-- Power Management -->
             <div class="flex items-center gap-1" id="powerGroup">
                 <button id="shutdownBtn" onclick="machineShutdown()" disabled title="ACPI Shutdown" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-red-500/15 hover:text-red-400 hover:border-red-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
@@ -37,9 +34,7 @@
                     <i class="fas fa-repeat text-[10px]"></i>Reset
                 </button>
             </div>
-
             <div class="w-px h-5 bg-white/10 mx-1"></div>
-
             <!-- Key Combos Dropdown -->
             <div class="relative" id="keysGroup">
                 <button onclick="toggleKeysDropdown()" disabled id="keysBtn" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
@@ -87,9 +82,7 @@
                     </div>
                 </div>
             </div>
-
             <div class="w-px h-5 bg-white/10 mx-1"></div>
-
             <!-- Clipboard Paste -->
             <div class="relative" id="clipboardGroup">
                 <button onclick="toggleClipboard()" disabled id="clipboardBtn" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
@@ -104,7 +97,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Tmate Panel -->
             <div id="tmatePanel" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                 <div class="bg-[#0c1020] border border-green-500/30 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
@@ -144,9 +136,7 @@
                     </div>
                 </div>
             </div>
-
             <div class="w-px h-5 bg-white/10 mx-1 hidden sm:block"></div>
-
             <!-- View Controls -->
             <div class="flex items-center gap-1 ml-auto">
                 <span id="desktopName" class="text-[11px] text-gray-600 hidden sm:block mr-2"></span>
@@ -157,19 +147,16 @@
                     <i class="fas fa-expand text-[10px]"></i>
                 </button>
                 <div class="w-px h-5 bg-white/10 mx-1"></div>
-
-            <!-- Tmate -->
-            <button id="tmateBtn" onclick="startTmate()" title="Start tmate session" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-green-500/15 hover:text-green-400 hover:border-green-500/30 transition-all flex items-center gap-1.5">
-                <i class="fas fa-terminal text-[10px]"></i>Tmate
-            </button>
-            <div class="w-px h-5 bg-white/10 mx-1"></div>
-
-            <!-- Mobile Keyboard -->
-            <button id="mobKbBtn" onclick="toggleMobileKeyboard()" disabled title="Mobile keyboard input" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
-                <i class="fas fa-keyboard text-[10px]"></i>Type
-            </button>
-
-            <button id="disconnectBtn" onclick="disconnect()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all hidden">
+                <!-- Tmate -->
+                <button id="tmateBtn" onclick="startTmate()" title="Start tmate session" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-green-500/15 hover:text-green-400 hover:border-green-500/30 transition-all flex items-center gap-1.5">
+                    <i class="fas fa-terminal text-[10px]"></i>Tmate
+                </button>
+                <div class="w-px h-5 bg-white/10 mx-1"></div>
+                <!-- Mobile Keyboard -->
+                <button id="mobKbBtn" onclick="toggleMobileKeyboard()" disabled title="Mobile keyboard input" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
+                    <i class="fas fa-keyboard text-[10px]"></i>Type
+                </button>
+                <button id="disconnectBtn" onclick="disconnect()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all hidden">
                     <i class="fas fa-plug"></i>
                 </button>
                 <button id="reconnectBtn" onclick="connect()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all hidden">
@@ -185,15 +172,13 @@
             <span class="ml-auto" id="infoUptime"><span id="infoConnTime">-</span></span>
         </div>
     </div>
-
     <!-- Console Canvas -->
     <div id="novncContainer" style="height:600px;background:#000;position:relative;overflow:hidden;">
-        <div id="novncOverlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:10;flex-direction:column;gap:12px;">
+        <div id="novncOverlay" style="position:absolute;inset:0;display:flex;align-items:center;justify:center;background:#000;z-index:10;flex-direction:column;gap:12px;">
             <div class="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             <div class="text-gray-500 text-sm">Initializing console...</div>
         </div>
     </div>
-
     <!-- Mobile Keyboard Bar -->
     <div id="mobKeyboardBar" class="hidden bg-black/80 border-t border-white/10 p-3 animate-slide-up">
         <div class="flex items-center gap-2">
@@ -218,7 +203,7 @@
             <button onclick="mobKbSpecial('Tab')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Tab</button>
             <button onclick="mobKbSpecial('BackSpace')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Bksp</button>
             <button onclick="mobKbSpecial('Delete')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Del</button>
-            <button onclick="mobKbText(' ') && mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Space</button>
+            <button onclick="mobKbText(' ')" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Space</button>
             <button onclick="sendKeyCombo(['ControlLeft','c']);closeKeysDropdown();mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Ctrl+C</button>
             <button onclick="sendKeyCombo(['ControlLeft','d']);closeKeysDropdown();mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Ctrl+D</button>
             <button onclick="sendKeyCombo(['ControlLeft','z']);closeKeysDropdown();mobKbInputFocus()" class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-white/5 text-gray-400 hover:bg-white/10 whitespace-nowrap">Ctrl+Z</button>
@@ -227,7 +212,6 @@
     </div>
 </div>
 {% endif %}
-
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
     <div class="lg:col-span-2 card rounded-xl p-6 animate-in">
         <h2 class="text-lg font-bold text-white mb-4">Connection Details</h2>
@@ -266,10 +250,8 @@
         </div>
     </div>
 </div>
-
 <script type="module">
 import RFB from '/novnc/core/rfb.js';
-
 const WS_PORT = {{ vm.ws_port or 0 }};
 const WS_HOST = '{{ host }}';
 const UUID = '{{ vm.uuid }}';
@@ -293,14 +275,12 @@ const INFO_RES = document.getElementById('infoRes');
 const INFO_BW = document.getElementById('infoBw');
 const INFO_CONN_TIME = document.getElementById('infoConnTime');
 const POWER_BTNS = ['shutdownBtn','rebootBtn','resetBtn'].map(id => document.getElementById(id));
-
 let rfb = null;
 let connected = false;
 let isScaled = true;
 let connStartTime = null;
 let bwInterval = null;
 let totalBytes = 0;
-
 function setStatus(text, level) {
     if (!STATUS) return;
     const dot = STATUS.querySelector('span');
@@ -321,15 +301,12 @@ function setStatus(text, level) {
         if (dot) { dot.className = 'w-2 h-2 rounded-full bg-yellow-400 animate-pulse'; }
     }
 }
-
 function showOverlay(show) {
     if (OVERLAY) OVERLAY.style.display = show ? 'flex' : 'none';
 }
-
 function setPowerBtnsDisabled(disabled) {
     POWER_BTNS.forEach(btn => { if (btn) btn.disabled = disabled; });
 }
-
 function updatePowerButtons() {
     if (rfb && rfb.capabilities) {
         const hasPower = rfb.capabilities.power;
@@ -343,7 +320,6 @@ function updatePowerButtons() {
         setPowerBtnsDisabled(true);
     }
 }
-
 function connect() {
     if (!WS_PORT || !WS_HOST || !CONTAINER) {
         setStatus('Console unavailable - VM not started', 'error');
@@ -365,7 +341,6 @@ function connect() {
     if (SCALE_BTN) SCALE_BTN.disabled = true;
     if (DESKTOP_NAME) DESKTOP_NAME.textContent = '';
     setPowerBtnsDisabled(true);
-
     const url = `ws://${WS_HOST}:${WS_PORT}/`;
     try {
         rfb = new RFB(CONTAINER, url, {
@@ -376,7 +351,6 @@ function connect() {
         rfb.viewOnly = false;
         rfb.scaleViewport = true;
         rfb.resizeSession = true;
-
         rfb.addEventListener('connect', () => {
             connected = true;
             connStartTime = Date.now();
@@ -394,7 +368,6 @@ function connect() {
             if (CONN_INFO_BAR) CONN_INFO_BAR.classList.remove('hidden');
             startBandwidthMonitor();
         });
-
         rfb.addEventListener('disconnect', (e) => {
             connected = false;
             if (KEYS_BTN) KEYS_BTN.disabled = true;
@@ -417,7 +390,6 @@ function connect() {
                     <button onclick="window.rfbReconnect()" class="btn-primary px-5 py-2 rounded-xl text-sm">Reconnect</button>
                 </div>`;
         });
-
         rfb.addEventListener('credentialsrequired', () => {
             setStatus('Password required', 'warn');
             showOverlay(true);
@@ -431,14 +403,12 @@ function connect() {
                     </form>
                 </div>`;
         });
-
         rfb.addEventListener('desktopname', (e) => {
             const name = e.detail.name || VM_NAME;
             document.title = `Console - ${name}`;
             if (DESKTOP_NAME) DESKTOP_NAME.textContent = name;
             if (INFO_DESKTOP) INFO_DESKTOP.textContent = name;
         });
-
         rfb.addEventListener('clipboard', (e) => {
             const text = e.detail.text;
             if (text) {
@@ -458,7 +428,6 @@ function connect() {
             </div>`;
     }
 }
-
 function startBandwidthMonitor() {
     if (bwInterval) clearInterval(bwInterval);
     let lastBytes = 0;
@@ -466,7 +435,6 @@ function startBandwidthMonitor() {
         if (!connected || !rfb) return;
         try {
             if (rfb._sock && rfb._sock._websocket) {
-                const ws = rfb._sock._websocket;
                 const now = Date.now();
                 if (connStartTime) {
                     const elapsed = Math.floor((now - connStartTime) / 1000);
@@ -481,7 +449,6 @@ function startBandwidthMonitor() {
         } catch(e) {}
     }, 2000);
 }
-
 function formatDuration(secs) {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
@@ -490,7 +457,6 @@ function formatDuration(secs) {
     if (m > 0) return `${m}m ${s}s`;
     return `${s}s`;
 }
-
 // Power Management
 window.machineShutdown = function() {
     if (rfb && connected) {
@@ -516,7 +482,6 @@ window.machineReset = function() {
         }
     }
 };
-
 // Key Combinations
 window.sendKeyCombo = function(keys) {
     if (!rfb || !connected) return;
@@ -539,7 +504,6 @@ window.toggleKeysDropdown = function() {
 window.closeKeysDropdown = function() {
     if (KEYS_DD) KEYS_DD.classList.add('hidden');
 };
-
 // Clipboard
 window.toggleClipboard = function() {
     if (CLIPBOARD_PANEL) CLIPBOARD_PANEL.classList.toggle('hidden');
@@ -551,7 +515,6 @@ window.pasteToVM = function() {
     rfb.clipboardPasteFrom(ta.value);
     showToast('Text sent to VM clipboard', 'success');
 };
-
 // View Controls
 window.toggleScale = function() {
     if (!rfb) return;
@@ -562,11 +525,9 @@ window.toggleScale = function() {
     }
     showToast(isScaled ? 'Scaling enabled' : 'Scaling disabled', 'info');
 };
-
 window.sendCtrlAltDel = function() {
     sendKeyCombo(['ControlLeft','AltLeft','Delete']);
 };
-
 window.disconnect = function() {
     if (rfb) {
         try { rfb.disconnect(); } catch(e) {}
@@ -590,12 +551,10 @@ window.disconnect = function() {
             <button onclick="window.rfbReconnect()" class="btn-primary px-5 py-2 rounded-xl text-sm">Reconnect</button>
         </div>`;
 };
-
 window.rfbReconnect = function() { connect(); };
 window.rfbSendCreds = function(password) {
     if (rfb) rfb.sendCredentials({ password: password });
 };
-
 window.toggleFullscreen = function() {
     const el = CONTAINER;
     if (!document.fullscreenElement) {
@@ -604,11 +563,9 @@ window.toggleFullscreen = function() {
         document.exitFullscreen().catch(() => {});
     }
 };
-
 window.copyText = function(t) {
     navigator.clipboard.writeText(t).then(() => showToast('Copied!', 'success'));
 };
-
 // VM Power actions (API calls)
 window.startVM = function() {
     if(!confirm('Start this VM?')) return;
@@ -632,15 +589,14 @@ window.stopVM = function() {
             else showToast(d.error||'Failed','error');
         });
 };
-
 // Close dropdowns on click outside
 document.addEventListener('click', (e) => {
     if (KEYS_DD && !e.target.closest('#keysGroup')) KEYS_DD.classList.add('hidden');
     if (CLIPBOARD_PANEL && !e.target.closest('#clipboardGroup')) CLIPBOARD_PANEL.classList.add('hidden');
 });
-
 // Tmate
 let tmateSshCmd = '';
+let mobKbSending = false;
 window.startTmate = function() {
     const panel = document.getElementById('tmatePanel');
     const loading = document.getElementById('tmateLoading');
@@ -695,8 +651,7 @@ window.copyTmateSsh = function() {
         navigator.clipboard.writeText(tmateSshCmd).then(() => showToast('SSH command copied!', 'success'));
     }
 };
-
-// Mobile Keyboard
+// Mobile Keyboard - FIXED (proper keysyms for letters = clean "root", no duplicates)
 window.toggleMobileKeyboard = function() {
     const bar = document.getElementById('mobKeyboardBar');
     const btn = document.getElementById('mobKbBtn');
@@ -712,31 +667,36 @@ window.toggleMobileKeyboard = function() {
         setTimeout(() => document.getElementById('mobKbInput')?.focus(), 100);
     }
 };
-
 window.mobKbText = function(t) {
-    if (!rfb || !connected) return;
-    const chars = t.split('');
-    let i = 0;
-    function sendNext() {
-        if (i >= chars.length) return;
-        const c = chars[i];
-        const code = c.charCodeAt(0);
-        try {
-            rfb.sendKey(code, 1);
-            setTimeout(() => {
-                try { rfb.sendKey(code, 0); } catch(e) {}
-                i++;
-                setTimeout(sendNext, 15);
-            }, 15);
-        } catch(e) { i++; setTimeout(sendNext, 15); }
-    }
-    sendNext();
+    if (!rfb || !connected || !t || mobKbSending) return;
+    mobKbSending = true;
     const input = document.getElementById('mobKbInput');
     if (input) input.value = '';
     updateMobKbSendBtn();
-    mobKbInputFocus();
+    const chars = [...t];
+    let i = 0;
+    function sendNext() {
+        if (i >= chars.length) {
+            mobKbSending = false;
+            mobKbInputFocus();
+            return;
+        }
+        const c = chars[i++];
+        const codePoint = c.codePointAt(0);
+        let keysym;
+        if (codePoint >= 32 && codePoint <= 126) {
+            keysym = codePoint; // fast keysym for printable ASCII
+        } else {
+            keysym = 0x01000000 + codePoint; // extended keysym for letters, Ctrl, etc.
+        }
+        try {
+            rfb.sendKey(keysym, 1);
+            rfb.sendKey(keysym, 0);
+        } catch(e) {}
+        setTimeout(sendNext, 30);
+    }
+    sendNext();
 };
-
 window.mobKbSpecial = function(key) {
     if (!rfb || !connected) return;
     const KEYSYM = {
@@ -749,35 +709,33 @@ window.mobKbSpecial = function(key) {
         'F6': 0xFFC3, 'F7': 0xFFC4, 'F8': 0xFFC5, 'F9': 0xFFC6,
         'F10': 0xFFC7, 'F11': 0xFFC8, 'F12': 0xFFC9
     };
-    const sym = KEYSYM[key] || key.charCodeAt(0);
+    const sym = KEYSYM[key] || (0x01000000 + key.codePointAt(0));
     try {
         rfb.sendKey(sym, 1);
-        setTimeout(() => { try { rfb.sendKey(sym, 0); } catch(e) {} }, 30);
+        rfb.sendKey(sym, 0);
     } catch(e) {}
     mobKbInputFocus();
 };
-
 window.sendMobKbText = function() {
     const input = document.getElementById('mobKbInput');
-    if (!input || !input.value) return;
-    mobKbText(input.value);
+    if (!input || !input.value || mobKbSending) return;
+    const text = input.value;
+    input.value = '';
+    updateMobKbSendBtn();
+    mobKbText(text);
     showToast('Text sent to VM', 'success');
 };
-
 window.sendMobKbEnter = function() {
     mobKbSpecial('Enter');
 };
-
 function mobKbInputFocus() {
     setTimeout(() => document.getElementById('mobKbInput')?.focus(), 50);
 }
-
 function updateMobKbSendBtn() {
     const input = document.getElementById('mobKbInput');
     const btn = document.getElementById('mobKbSendBtn');
     if (input && btn) btn.disabled = !input.value;
 }
-
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('mobKbInput');
     if (input) {
@@ -791,7 +749,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
 // Auto-connect on load
 {% if vm.running %}
 if (WS_PORT && WS_HOST) {
@@ -799,7 +756,6 @@ if (WS_PORT && WS_HOST) {
 }
 {% endif %}
 </script>
-
 <style>
 @keyframes slide-up {
     from { transform: translateY(100%); opacity: 0; }
