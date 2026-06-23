@@ -1346,7 +1346,7 @@ def background_create_vm(vm_uuid, img_url, img_file, seed_file, disk_size, usern
                 subprocess.run(['wget', '-q', '-O', base_img, img_url], check=True, timeout=300)
             disk_sz = disk_size if disk_size.endswith(('G','M','T')) else f"{disk_size}G"
             subprocess.run(['qemu-img', 'create', '-f', 'qcow2', '-b', base_img, '-F', 'qcow2', img_file, disk_sz], check=True, capture_output=True, timeout=60)
-        user_data = f"""#cloud-config\nhostname: {hostname}\ndisable_root: false\nusers:\n  - name: {username}\n    sudo: ALL=(ALL) NOPASSWD:ALL\n    shell: /bin/bash\n    lock_passwd: false\nchpasswd:\n  list: |\n    {username}:{password}\n  expire: false\nssh_pwauth: true\npackage_update: false\nruncmd:\n  - sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config\n  - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config\n  - systemctl restart sshd || systemctl restart ssh\n"""
+        user_data = f"""#cloud-config\nhostname: {hostname}\nusers:\n  - name: {username}\n    sudo: ALL=(ALL) NOPASSWD:ALL\n    shell: /bin/bash\n    lock_passwd: false\nchpasswd:\n  list: |\n    {username}:{password}\n  expire: false\nssh_pwauth: true\npackage_update: false\n"""
         with open('/tmp/seed-user-data', 'w') as f: f.write(user_data)
         with open('/tmp/seed-meta-data', 'w') as f: f.write(f"instance-id: {vm_uuid}\nlocal-hostname: {hostname}\n")
         subprocess.run(['cloud-localds', seed_file, '/tmp/seed-user-data', '/tmp/seed-meta-data'], check=True, capture_output=True, timeout=30)
