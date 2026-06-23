@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-bold text-white">{{ vm.name }}</h1>
         <p class="text-gray-500 mt-1">
             {{ vm.os_type }}/{{ vm.os_version }}
-            {% if vm.node_name %}<span class="text-blue-400">· {{ vm.node_name }}</span>{% endif %}
+            {% if vm.node_name %}<span class="text-orange-400">· {{ vm.node_name }}</span>{% endif %}
             · <span class="text-gray-400">{{ vm.owner }}</span>
         </p>
     </div>
@@ -13,8 +13,9 @@
         {% if vm.status == 'running' %}
         <button onclick="controlVM('stop')" class="btn-danger px-4 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-stop"></i>Stop</button>
         <button onclick="controlVM('restart')" class="btn-warning px-4 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-rotate"></i>Restart</button>
-        <a href="/vnc/{{ vm.uuid }}" target="_blank" class="bg-blue-500/10 text-blue-400 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition inline-flex items-center gap-2"><i class="fas fa-display"></i>VNC</a>
+        <a href="/vnc/{{ vm.uuid }}" target="_blank" class="bg-orange-500/10 text-orange-400 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-500/20 transition inline-flex items-center gap-2"><i class="fas fa-display"></i>VNC</a>
         <a href="/terminal/{{ vm.uuid }}" target="_blank" class="bg-green-500/10 text-green-400 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-500/20 transition inline-flex items-center gap-2"><i class="fas fa-terminal"></i>SSH</a>
+        <button onclick="generateTmate()" id="tmatebtn" class="bg-purple-500/10 text-purple-400 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-purple-500/20 transition inline-flex items-center gap-2"><i class="fas fa-link"></i>tmate</button>
         {% else %}
         <button onclick="controlVM('start')" class="btn-success px-4 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-play"></i>Start</button>
         {% endif %}
@@ -47,7 +48,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
         <div class="card rounded-xl p-6 animate-in">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-gear text-blue-400"></i>Configuration</h2>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-gear text-orange-400"></i>Configuration</h2>
             <div class="grid grid-cols-2 gap-3 text-sm">
                 <div class="p-3 rounded-xl bg-white/5"><span class="text-gray-500 text-xs">Status</span><br><span class="badge {{ 'badge-success' if vm.status=='running' else 'badge-danger' }} mt-1 inline-flex"><span class="status-dot {{ vm.status }}"></span>{{ vm.status }}</span></div>
                 <div class="p-3 rounded-xl bg-white/5"><span class="text-gray-500 text-xs">Operating System</span><br><span class="font-medium text-white">{{ vm.os_type }}/{{ vm.os_version }}</span></div>
@@ -61,11 +62,11 @@
                 <div class="p-3 rounded-xl bg-white/5"><span class="text-gray-500 text-xs">Auto Renew</span><br><span class="badge {{ 'badge-success' if vm.auto_renew else 'badge-danger' }} mt-1 inline-flex">{{ 'Yes' if vm.auto_renew else 'No' }}</span></div>
             </div>
             {% if vm.status == 'running' %}
-            <div class="mt-4 p-4 rounded-xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 border border-blue-500/10">
-                <p class="text-sm text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-terminal text-blue-400"></i>SSH Connection</p>
-                <div class="font-mono text-sm bg-black/40 p-3 rounded-xl text-gray-300 select-all">ssh {{ vm.username }}@<span class="text-blue-400">{{ request.host.split(':')[0] }}</span> -p {{ vm.ssh_port }}</div>
+            <div class="mt-4 p-4 rounded-xl bg-gradient-to-r from-orange-500/5 to-purple-500/5 border border-orange-500/10">
+                <p class="text-sm text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-terminal text-orange-400"></i>SSH Connection</p>
+                <div class="font-mono text-sm bg-black/40 p-3 rounded-xl text-gray-300 select-all">ssh {{ vm.username }}@<span class="text-orange-400">{{ request.host.split(':')[0] }}</span> -p {{ vm.ssh_port }}</div>
                 <p class="text-xs text-gray-600 mt-2">Password: <span class="text-gray-400 font-mono">{{ vm.password }}</span></p>
-                <a href="/vnc/{{ vm.uuid }}" target="_blank" class="text-blue-400 text-sm mt-3 inline-flex items-center gap-2 hover:text-blue-300">Open VNC Console <i class="fas fa-arrow-right text-xs"></i></a>
+                <a href="/vnc/{{ vm.uuid }}" target="_blank" class="text-orange-400 text-sm mt-3 inline-flex items-center gap-2 hover:text-orange-300">Open VNC Console <i class="fas fa-arrow-right text-xs"></i></a>
             </div>
             {% endif %}
         </div>
@@ -94,7 +95,7 @@
         </div>
 
         <div class="card rounded-xl p-6 animate-in">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-upgrade text-blue-400"></i>Resize VM</h2>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-upgrade text-orange-400"></i>Resize VM</h2>
             <form id="upgradeForm" class="space-y-4" onsubmit="return doUpgrade(event)">
                 <div class="grid grid-cols-3 gap-4">
                     <div><label class="block text-sm font-medium text-gray-400 mb-2">vCPU</label>
@@ -109,7 +110,7 @@
         </div>
 
         <div class="card rounded-xl p-6 animate-in" id="firewallSection">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-shield-halved text-blue-400"></i>Firewall Rules</h2>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-shield-halved text-orange-400"></i>Firewall Rules</h2>
             {% if vm.status == 'running' %}
             <div id="firewallList" class="text-sm text-gray-500 mb-4">Loading...</div>
             <form id="firewallForm" class="space-y-3 border-t border-gray-800/50 pt-4" onsubmit="return addFirewallRule(event)">
@@ -142,8 +143,46 @@
             {% endif %}
         </div>
 
+        <div class="card rounded-xl p-6 animate-in" id="sshKeysSection">
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-key text-orange-400"></i>SSH Keys</h2>
+            <div id="sshKeysList" class="text-sm text-gray-500 mb-4">Loading...</div>
+            <div class="border-t border-gray-800/50 pt-4">
+                <p class="text-xs text-gray-500 mb-3">Add SSH keys in <a href="/profile" class="text-orange-400 hover:underline">Profile → SSH Keys</a>, then enable them per-VM here. Keys are injected into <code class="text-orange-400">/root/.ssh/authorized_keys</code> on the running VM live — no reboot needed.</p>
+                <div id="availableKeysList">Loading keys...</div>
+            </div>
+        </div>
+
+        <div class="card rounded-xl p-6 animate-in" id="tmatePanelSection">
+            <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-link text-purple-400"></i>tmate Share Session</h2>
+            <p class="text-sm text-gray-500 mb-4">Creates a shareable terminal session on the VM via <strong class="text-white">tmate</strong>. Anyone with the SSH command can connect to your VM's live terminal.</p>
+            {% if vm.status == 'running' %}
+            <button onclick="generateTmate()" id="tmateBtnBig" class="bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition border border-purple-500/20 px-5 py-3 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
+                <i class="fas fa-wand-magic-sparkles"></i>Install tmate &amp; Generate Session
+            </button>
+            <div id="tmateResult" class="hidden mt-4 space-y-3">
+                <div class="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                    <p class="text-xs text-green-400 font-semibold mb-2 flex items-center gap-1"><i class="fas fa-terminal"></i> SSH Command</p>
+                    <div class="flex items-center gap-2">
+                        <code id="tmateSshCmd" class="flex-1 text-xs font-mono text-green-300 bg-black/30 px-3 py-2 rounded-lg break-all"></code>
+                        <button onclick="copyTmate('ssh')" class="text-green-400 hover:text-green-300 transition p-2 rounded-lg hover:bg-green-500/10" title="Copy"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="p-4 rounded-xl bg-blue-500/5 border border-orange-500/20">
+                    <p class="text-xs text-orange-400 font-semibold mb-2 flex items-center gap-1"><i class="fas fa-globe"></i> Web Browser</p>
+                    <div class="flex items-center gap-2">
+                        <code id="tmateWebCmd" class="flex-1 text-xs font-mono text-orange-300 bg-black/30 px-3 py-2 rounded-lg break-all"></code>
+                        <button onclick="copyTmate('web')" class="text-orange-400 hover:text-orange-300 transition p-2 rounded-lg hover:bg-orange-500/10" title="Copy"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-600">Kill the tmate process on the VM to revoke access.</p>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-600">Start the VM to use tmate.</p>
+            {% endif %}
+        </div>
+
         <div class="card rounded-xl p-6 animate-in">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-clock-rotate text-blue-400"></i>Backups</h2>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-clock-rotate text-orange-400"></i>Backups</h2>
             <div class="space-y-4">
                 <form id="backupScheduleForm" class="space-y-3" onsubmit="return saveBackupSchedule(event)">
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -182,7 +221,7 @@
 
         <div class="card rounded-xl p-6 animate-in">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-camera text-blue-400"></i>Snapshots</h2>
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-camera text-orange-400"></i>Snapshots</h2>
             </div>
             <div class="flex gap-2 mb-4">
                 <input type="text" id="snapshotName" placeholder="Enter snapshot name" class="input-field flex-1 rounded-xl px-4 py-2.5 text-sm">
@@ -243,7 +282,7 @@
         </div>
 
         <div class="card rounded-xl p-6 animate-in">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-cube text-blue-400"></i>Quick Install</h2>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-cube text-orange-400"></i>Quick Install</h2>
             <p class="text-sm text-gray-500 mb-4">One-click application installation via SSH. VM must be running.</p>
             <div id="appsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="text-center py-8 text-gray-600 col-span-full">Loading apps...</div>
@@ -257,7 +296,7 @@
             <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-heart-pulse text-green-400"></i>Monitoring</h2>
             <div id="monitoringStatus" class="text-sm text-gray-500">Loading...</div>
             {% if current_user.role in ['admin','reseller'] %}
-            <button onclick="toggleMonitoring()" class="mt-3 px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"><i class="fas fa-toggle-on"></i>Toggle Monitoring</button>
+            <button onclick="toggleMonitoring()" class="mt-3 px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition"><i class="fas fa-toggle-on"></i>Toggle Monitoring</button>
             {% endif %}
         </div>
 
@@ -281,11 +320,11 @@
         </div>
 
         <div class="card rounded-xl p-6 animate-in">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-simple text-blue-400"></i>Usage</h2>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-simple text-orange-400"></i>Usage</h2>
             <div class="space-y-5">
                 <div>
                     <div class="flex justify-between text-sm mb-1.5"><span class="text-gray-500">CPU</span><span class="text-gray-300 font-medium">{{ vm.cpus }} cores</span></div>
-                    <div class="progress-bar"><div class="progress-fill bg-gradient-to-r from-blue-500 to-blue-400" style="width:50%"></div></div>
+                    <div class="progress-bar"><div class="progress-fill bg-gradient-to-r from-orange-500 to-red-400" style="width:50%"></div></div>
                 </div>
                 <div>
                     <div class="flex justify-between text-sm mb-1.5"><span class="text-gray-500">RAM</span><span class="text-gray-300 font-medium">{{ vm.ram }} MB</span></div>
@@ -299,7 +338,7 @@
                     <div class="progress-bar"><div id="bandwidthBar" class="progress-fill bg-gradient-to-r from-purple-500 to-pink-400" style="width:{{ min((vm.bandwidth_used / max(vm.bandwidth_limit,1) * 100), 100) }}%"></div></div>
                 </div>
             </div>
-            <div class="mt-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+            <div class="mt-6 p-4 rounded-xl bg-gradient-to-r from-orange-500/10 to-purple-500/10 border border-orange-500/20">
                 <p class="text-sm text-gray-500">Monthly Cost</p>
                 <p class="text-2xl font-bold gradient-text">${{ "%.2f"|format(vm.hourly_cost * 730) }}</p>
             </div>
@@ -361,8 +400,8 @@ function unmountISO(){if(!confirm('Unmount ISO?'))return;fetch('/api/vm/{{ vm.uu
 // Apps
 function loadApps(){fetch('/api/vm/{{ vm.uuid }}/apps').then(r=>r.json()).then(d=>{const el=document.getElementById('appsGrid');if(!d.success||!d.apps){el.innerHTML='<div class="text-center py-6 text-gray-600 col-span-full">No apps available</div>';return;}
 const icons={'wordpress':'fa-wordpress','docker':'fa-docker','pterodactyl':'fa-gamepad','nodejs':'fa-node-js','nginx':'fa-server','postgres':'fa-database','redis':'fa-bolt','mailcow':'fa-envelope'};
-let html='';Object.entries(d.apps).forEach(([key,app]) => {html+=`<div class="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition cursor-pointer text-center" onclick="installApp('${key}')" id="app-${key}"><div class="text-2xl mb-2 text-blue-400"><i class="fab ${icons[key]||'fa-cube'}"></i></div><div class="text-sm font-medium text-white">${app.name}</div><div class="text-xs text-gray-500 mt-0.5">${app.description}</div></div>`;});el.innerHTML=html;});}
-function installApp(key){if(!confirm('Install this application on the VM?'))return;const card=document.getElementById('app-'+key);const orig=card?card.innerHTML:'';if(card)card.innerHTML='<div class="text-center py-2"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div><div class="text-xs text-blue-400">Installing...</div></div>';
+let html='';Object.entries(d.apps).forEach(([key,app]) => {html+=`<div class="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition cursor-pointer text-center" onclick="installApp('${key}')" id="app-${key}"><div class="text-2xl mb-2 text-orange-400"><i class="fab ${icons[key]||'fa-cube'}"></i></div><div class="text-sm font-medium text-white">${app.name}</div><div class="text-xs text-gray-500 mt-0.5">${app.description}</div></div>`;});el.innerHTML=html;});}
+function installApp(key){if(!confirm('Install this application on the VM?'))return;const card=document.getElementById('app-'+key);const orig=card?card.innerHTML:'';if(card)card.innerHTML='<div class="text-center py-2"><div class="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div><div class="text-xs text-orange-400">Installing...</div></div>';
 const f=new FormData();f.append('app_key',key);fetch('/api/vm/{{ vm.uuid }}/apps/install',{method:'POST',body:f}).then(r=>r.json()).then(d=>{showToast(d.message||d.error||'Installing',d.success?'success':'error');if(!d.success&&card)card.innerHTML=orig;});}
 
 function loadMonitoring(){fetch('/api/vm/{{ vm.uuid }}/monitoring').then(r=>r.json()).then(d=>{const el=document.getElementById('monitoringStatus');if(!d.success){el.innerHTML='<div class="text-gray-600">Monitoring unavailable</div>';return;}
@@ -381,6 +420,84 @@ function toggleMonitoring(){fetch('/api/vm/{{ vm.uuid }}/monitoring/toggle',{met
 document.getElementById('autoStartToggle')?.addEventListener('change',function(){const f=new FormData();f.append('auto_start',this.checked?'1':'0');fetch('/api/vm/{{ vm.uuid }}/auto-start',{method:'POST',body:f}).then(r=>r.json()).then(d=>{showToast(d.message||'Toggled',d.success?'success':'error');});});
 document.getElementById('persistToggle')?.addEventListener('change',function(){fetch('/api/vm/{{ vm.uuid }}/persist',{method:'POST'}).then(r=>r.json()).then(d=>{showToast(d.success?'Persist toggled':'Error',d.success?'success':'error');});});
 
-document.addEventListener('DOMContentLoaded',function(){loadSnapshots();updateRebuildVersions();updateReinstallVersions();loadFirewallRules();loadBackupSchedule();loadApps();loadMonitoring();fetch('/api/vm/{{ vm.uuid }}/traffic').then(r=>r.json()).then(d=>{if(d.success){document.getElementById('bandwidthDisplay').textContent=d.bandwidth_used+'GB / '+d.bandwidth_limit+'GB';document.getElementById('bandwidthBar').style.width=Math.min(d.usage_percent,100)+'%';}});});
+// tmate
+function generateTmate(){
+    const btn=document.getElementById('tmateBtnBig')||document.getElementById('tmatebtn');
+    if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Installing tmate… (~30s)';}
+    fetch('/api/vm/{{ vm.uuid }}/tmate',{method:'POST'}).then(r=>r.json()).then(d=>{
+        if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-rotate"></i> Regenerate Session';}
+        if(!d.success){showToast(d.error||'tmate failed','error');return;}
+        document.getElementById('tmateSshCmd').textContent=d.tmate_ssh||'';
+        document.getElementById('tmateWebCmd').textContent=d.tmate_web||d.tmate_ssh||'';
+        document.getElementById('tmateResult').classList.remove('hidden');
+        showToast('tmate session ready!','success');
+    }).catch(()=>{if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-wand-magic-sparkles"></i>Install tmate & Generate Session';}showToast('Request failed','error');});
+}
+function copyTmate(type){
+    const el=type==='ssh'?document.getElementById('tmateSshCmd'):document.getElementById('tmateWebCmd');
+    if(!el)return;
+    navigator.clipboard.writeText(el.textContent).then(()=>showToast('Copied to clipboard','success'));
+}
+
+// SSH Keys
+function loadSshKeys(){
+    Promise.all([
+        fetch('/api/ssh-keys').then(r=>r.json()),
+        fetch('/api/vm/{{ vm.uuid }}/ssh-keys').then(r=>r.json())
+    ]).then(([allKeys, vmKeys])=>{
+        const linkedIds=new Set((vmKeys.keys||[]).map(k=>k.id));
+        // Current VM keys
+        const listEl=document.getElementById('sshKeysList');
+        if(!allKeys.keys||!allKeys.keys.length){
+            listEl.innerHTML='<div class="text-gray-600 text-xs">No SSH keys in your account yet.</div>';
+            document.getElementById('availableKeysList').innerHTML='';
+            return;
+        }
+        const linked=allKeys.keys.filter(k=>linkedIds.has(k.id));
+        if(linked.length){
+            listEl.innerHTML='<div class="space-y-2">'+linked.map(k=>`
+                <div class="flex items-center justify-between p-3 rounded-xl bg-green-500/5 border border-green-500/15">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <i class="fas fa-key text-green-400 text-xs flex-shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-white truncate">${k.name}</p>
+                            <p class="text-xs text-gray-600 font-mono truncate">${(k.public_key||'').slice(0,60)}…</p>
+                        </div>
+                    </div>
+                    <span class="badge badge-success ml-2 flex-shrink-0">Active</span>
+                </div>`).join('')+'</div>';
+        } else {
+            listEl.innerHTML='<div class="text-gray-600 text-xs">No SSH keys currently active on this VM.</div>';
+        }
+        // Available to toggle
+        document.getElementById('availableKeysList').innerHTML='<div class="space-y-2">'+allKeys.keys.map(k=>{
+            const on=linkedIds.has(k.id);
+            return `<div class="flex items-center justify-between p-3 rounded-xl bg-white/3 hover:bg-white/5 transition">
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-white">${k.name}</p>
+                    <p class="text-xs text-gray-600 font-mono truncate">${(k.public_key||'').slice(0,50)}…</p>
+                </div>
+                <button onclick="toggleSshKey(${k.id},this)"
+                    class="ml-3 flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${on?'bg-green-500/15 text-green-400 hover:bg-red-500/15 hover:text-red-400':'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20'}">
+                    ${on?'<i class="fas fa-check mr-1"></i>Active':'<i class="fas fa-plus mr-1"></i>Add'}
+                </button>
+            </div>`;
+        }).join('')+'</div>';
+    }).catch(()=>{
+        document.getElementById('sshKeysList').innerHTML='<div class="text-red-400 text-xs">Failed to load SSH keys.</div>';
+    });
+}
+function toggleSshKey(keyId, btn){
+    const f=new FormData();f.append('key_id',keyId);
+    const orig=btn.innerHTML; btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+    fetch('/api/vm/{{ vm.uuid }}/ssh-keys',{method:'POST',body:f}).then(r=>r.json()).then(d=>{
+        btn.disabled=false;
+        showToast(d.message||d.error,d.success?'success':'error');
+        if(d.success) loadSshKeys();
+        else btn.innerHTML=orig;
+    });
+}
+
+document.addEventListener('DOMContentLoaded',function(){loadSnapshots();updateRebuildVersions();updateReinstallVersions();loadFirewallRules();loadBackupSchedule();loadApps();loadMonitoring();loadSshKeys();fetch('/api/vm/{{ vm.uuid }}/traffic').then(r=>r.json()).then(d=>{if(d.success){document.getElementById('bandwidthDisplay').textContent=d.bandwidth_used+'GB / '+d.bandwidth_limit+'GB';document.getElementById('bandwidthBar').style.width=Math.min(d.usage_percent,100)+'%';}});});
 </script>
 {% endblock %}

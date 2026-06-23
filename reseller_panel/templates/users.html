@@ -11,7 +11,7 @@
     </div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-    <div class="stat-card rounded-xl p-5 text-center animate-in"><p class="text-3xl font-bold text-blue-400">{{ stats.admins }}</p><p class="text-gray-500 text-sm mt-1">Admins</p></div>
+    <div class="stat-card rounded-xl p-5 text-center animate-in"><p class="text-3xl font-bold text-orange-400">{{ stats.admins }}</p><p class="text-gray-500 text-sm mt-1">Admins</p></div>
     <div class="stat-card rounded-xl p-5 text-center animate-in"><p class="text-3xl font-bold text-purple-400">{{ stats.resellers }}</p><p class="text-gray-500 text-sm mt-1">Resellers</p></div>
     <div class="stat-card rounded-xl p-5 text-center animate-in"><p class="text-3xl font-bold text-green-400">{{ stats.clients }}</p><p class="text-gray-500 text-sm mt-1">Clients</p></div>
     <div class="stat-card rounded-xl p-5 text-center animate-in"><p class="text-3xl font-bold text-white">{{ stats.total }}</p><p class="text-gray-500 text-sm mt-1">Total Users</p></div>
@@ -48,7 +48,7 @@
                     <td class="px-6 py-4"><span class="badge {{ 'badge-success' if u.status=='active' else 'badge-danger' }}">{{ u.status }}</span></td>
                     <td class="px-6 py-4">
                         <div class="flex space-x-1">
-                            {% if current_user.role == 'admin' %}<a href="/users/{{ u.id }}/edit" class="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"><i class="fas fa-pen-to-square"></i></a>{% endif %}
+                            {% if current_user.role == 'admin' %}<a href="/users/{{ u.id }}/edit" class="p-2 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition"><i class="fas fa-pen-to-square"></i></a>{% endif %}
                             {% if u.id != current_user.id %}<button onclick="deleteUser({{ u.id }})" class="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"><i class="fas fa-trash-can"></i></button>{% endif %}
                         </div>
                     </td>

@@ -1346,9 +1346,28 @@ def background_create_vm(vm_uuid, img_url, img_file, seed_file, disk_size, usern
         if img_url:
             base_img = os.path.join(VM_DIR, f"base-{os.path.basename(img_url)}")
             if not os.path.exists(base_img):
-                subprocess.run(['wget', '-q', '-O', base_img, img_url], check=True, timeout=300)
+                subprocess.run(['wget', '-q', '--show-progress', '-O', base_img, img_url], check=True, timeout=600)
             disk_sz = disk_size if disk_size.endswith(('G','M','T')) else f"{disk_size}G"
             subprocess.run(['qemu-img', 'create', '-f', 'qcow2', '-b', base_img, '-F', 'qcow2', img_file, disk_sz], check=True, capture_output=True, timeout=60)
+
+        # Fetch any SSH keys linked to this VM
+        _conn_keys = get_db()
+        ssh_key_rows = _conn_keys.execute(
+            """SELECT sk.public_key FROM ssh_keys sk
+               JOIN vm_ssh_keys vsk ON sk.id=vsk.ssh_key_id
+               WHERE vsk.vm_uuid=?""", (vm_uuid,)).fetchall()
+        user_ssh_keys = [r['public_key'] for r in ssh_key_rows]
+        _conn_keys.close()
+
+        # Build cloud-init authorized_keys block for root and user
+        def _ssh_keys_block(indent='    '):
+            if not user_ssh_keys:
+                return ''
+            lines = [f'{indent}ssh_authorized_keys:\n']
+            for k in user_ssh_keys:
+                lines.append(f'{indent}  - {k.strip()}\n')
+            return ''.join(lines)
+
         user_data = (
             "#cloud-config\n"
             f"hostname: {hostname}\n"
@@ -1362,15 +1381,19 @@ def background_create_vm(vm_uuid, img_url, img_file, seed_file, disk_size, usern
             "users:\n"
             "  - name: root\n"
             "    lock_passwd: false\n"
-            f"  - name: {username}\n"
+            + _ssh_keys_block('    ')
+            + f"  - name: {username}\n"
             "    sudo: ALL=(ALL) NOPASSWD:ALL\n"
             "    shell: /bin/bash\n"
             "    lock_passwd: false\n"
-            "package_update: false\n"
+            + _ssh_keys_block('    ')
+            + "package_update: false\n"
+            "package_upgrade: false\n"
             "runcmd:\n"
             "  - sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config\n"
             "  - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config\n"
             "  - systemctl restart sshd || systemctl restart ssh\n"
+            "  - touch /etc/cloud/cloud-init.disabled\n"
         )
         with open('/tmp/seed-user-data', 'w') as f: f.write(user_data)
         with open('/tmp/seed-meta-data', 'w') as f: f.write(f"instance-id: {vm_uuid}\nlocal-hostname: {hostname}\n")
@@ -1417,16 +1440,27 @@ def _start_vm_internal(uuid, conn=None):
         ws_port = get_available_port(6001, 7000)
         cpu_string = CPU_MODELS.get(vm['cpu_model'], 'host')
         kvm = check_kvm()
+        machine_opts = 'type=q35,accel=kvm' if kvm else 'type=q35'
         cmd = ['qemu-system-x86_64', '-name', f'vpanel-{uuid}',
-               '-machine', 'type=q35,accel=kvm' if kvm else 'type=q35',
+               '-machine', machine_opts,
                '-cpu', cpu_string, '-smp', str(vm['cpus']), '-m', str(vm['ram']),
-               '-drive', f'file={vm["img_file"]},format=qcow2,if=virtio',
-               '-drive', f'file={vm["seed_file"]},format=raw,if=virtio',
+               # Fast disk I/O with writeback cache and io_uring when available
+               '-drive', f'file={vm["img_file"]},format=qcow2,if=virtio,cache=writeback,aio=threads',
+               '-drive', f'file={vm["seed_file"]},format=raw,if=virtio,cache=unsafe',
+               # Network with virtio for speed
                '-netdev', f'user,id=net0,hostfwd=tcp::{vm["ssh_port"]}-:22',
                '-device', 'virtio-net-pci,netdev=net0',
+               # VNC + display
                '-vnc', f':{vnc_port - 5900}', '-vga', 'virtio', '-display', 'none',
                '-usb', '-device', 'usb-tablet', '-k', 'en-us',
-               '-rtc', 'base=localtime,clock=host', '-msg', 'timestamp=on']
+               # Fast boot: skip BIOS splash/delay, boot straight from disk
+               '-boot', 'order=c,menu=off,splash-time=0',
+               '-no-fd-bootchk',
+               '-rtc', 'base=localtime,clock=host',
+               # Reduce QEMU overhead
+               '-no-user-config', '-nodefaults',
+               '-device', 'virtio-balloon',
+               '-msg', 'timestamp=on']
         iso_mount = conn.execute("SELECT iso_path FROM iso_mounts WHERE vm_uuid=? AND mounted=1 ORDER BY id DESC LIMIT 1", (uuid,)).fetchone()
         if iso_mount and os.path.exists(iso_mount['iso_path']):
             cmd.extend(['-cdrom', iso_mount['iso_path']])
@@ -1554,6 +1588,52 @@ def run_ssh_command(vm_uuid, command):
         ssh.close()
     except Exception:
         pass
+
+
+@app.route('/api/vm/<uuid>/tmate', methods=['POST'])
+@login_required
+def api_vm_tmate(uuid):
+    """Install tmate on the VM and return a shareable SSH session URL."""
+    result = _ownership_vm(uuid)
+    if result[0] is None:
+        return result[1], result[2]
+    user, conn, vm = result
+    conn.close()
+    if not is_vm_running(uuid):
+        return jsonify({'success': False, 'error': 'VM must be running'})
+    try:
+        import paramiko, time as _time
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect('127.0.0.1', port=vm['ssh_port'],
+                    username='root', password=vm['password'],
+                    timeout=20, banner_timeout=30, auth_timeout=15)
+        # Install tmate silently
+        _, stdout, stderr = ssh.exec_command(
+            'DEBIAN_FRONTEND=noninteractive apt-get update -qq && '
+            'DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tmate 2>&1',
+            timeout=180)
+        install_out = stdout.read().decode()
+        install_err = stderr.read().decode()
+        # Start a detached tmate session
+        ssh.exec_command('pkill -f "tmate -S /tmp/vpanel-tmate.sock" 2>/dev/null; true', timeout=5)
+        _time.sleep(0.5)
+        ssh.exec_command('tmate -S /tmp/vpanel-tmate.sock new-session -d 2>/dev/null', timeout=10)
+        _time.sleep(2)
+        # Get SSH connection string
+        _, out, _ = ssh.exec_command(
+            'tmate -S /tmp/vpanel-tmate.sock display -p "#{tmate_ssh}" 2>/dev/null', timeout=10)
+        tmate_ssh = out.read().decode().strip()
+        _, out2, _ = ssh.exec_command(
+            'tmate -S /tmp/vpanel-tmate.sock display -p "#{tmate_web}" 2>/dev/null', timeout=10)
+        tmate_web = out2.read().decode().strip()
+        ssh.close()
+        if not tmate_ssh:
+            return jsonify({'success': False, 'error': 'tmate started but no session URL returned. Try again in a few seconds.'})
+        return jsonify({'success': True, 'tmate_ssh': tmate_ssh, 'tmate_web': tmate_web,
+                        'message': 'tmate session created'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 @app.route('/api/vm/<uuid>/rename', methods=['POST'])
@@ -2123,12 +2203,31 @@ def api_vm_ssh_keys(uuid):
         conn.close()
         return jsonify({'success': False, 'error': 'Key ID required'})
     existing = conn.execute("SELECT id FROM vm_ssh_keys WHERE vm_uuid=? AND ssh_key_id=?", (uuid, key_id)).fetchone()
+    key_row = conn.execute("SELECT public_key FROM ssh_keys WHERE id=?", (key_id,)).fetchone()
     if existing:
         conn.execute("DELETE FROM vm_ssh_keys WHERE id=?", (existing['id'],))
+        action = 'removed'
     else:
         conn.execute("INSERT INTO vm_ssh_keys (vm_uuid, ssh_key_id) VALUES (?,?)", (uuid, key_id))
-    conn.commit(); conn.close()
-    return jsonify({'success': True, 'message': 'SSH key association updated'})
+        action = 'added'
+    conn.commit()
+    # Live-push to running VM so no reboot is needed
+    if key_row and is_vm_running(uuid):
+        pub = key_row['public_key'].strip()
+        pub_safe = pub.replace("'", "'\\''")
+        if action == 'added':
+            push_cmd = (
+                "mkdir -p /root/.ssh && chmod 700 /root/.ssh && "
+                f"grep -qxF '{pub_safe}' /root/.ssh/authorized_keys 2>/dev/null "
+                f"|| echo '{pub_safe}' >> /root/.ssh/authorized_keys && "
+                "chmod 600 /root/.ssh/authorized_keys"
+            )
+        else:
+            first40 = pub[:40].replace('/', '\\/').replace('.', '\\.')
+            push_cmd = f"sed -i '/{first40}/d' /root/.ssh/authorized_keys 2>/dev/null; true"
+        threading.Thread(target=run_ssh_command, args=(uuid, push_cmd), daemon=True).start()
+    conn.close()
+    return jsonify({'success': True, 'message': f'SSH key {action} successfully'})
 
 
 @app.route('/api/startup-scripts', methods=['GET'])

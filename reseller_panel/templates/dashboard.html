@@ -18,8 +18,8 @@
         <div class="w-10 h-10 mx-auto rounded-xl bg-green-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition"><i class="fas fa-plus-circle text-green-400"></i></div>
         <p class="font-semibold text-white text-xs">Create VM</p>
     </a>
-    <a href="/users/create" class="card rounded-xl p-4 text-center hover:border-blue-500/30 transition group">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-blue-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition"><i class="fas fa-user-plus text-blue-400"></i></div>
+    <a href="/users/create" class="card rounded-xl p-4 text-center hover:border-orange-500/30 transition group">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-orange-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition"><i class="fas fa-user-plus text-orange-400"></i></div>
         <p class="font-semibold text-white text-xs">Add User</p>
     </a>
     <a href="/tickets/create" class="card rounded-xl p-4 text-center hover:border-yellow-500/30 transition group">
@@ -30,8 +30,8 @@
         <div class="w-10 h-10 mx-auto rounded-xl bg-purple-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition"><i class="fas fa-file-invoice-dollar text-purple-400"></i></div>
         <p class="font-semibold text-white text-xs">Invoices</p>
     </a>
-    <a href="/knowledge-base" class="card rounded-xl p-4 text-center hover:border-blue-500/30 transition group">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-blue-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition"><i class="fas fa-book text-blue-400"></i></div>
+    <a href="/knowledge-base" class="card rounded-xl p-4 text-center hover:border-orange-500/30 transition group">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-orange-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition"><i class="fas fa-book text-orange-400"></i></div>
         <p class="font-semibold text-white text-xs">Knowledge Base</p>
     </a>
 </div>
@@ -44,7 +44,7 @@
                 <p class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total VMs</p>
                 <p class="text-3xl font-bold mt-1 text-white">{{ stats.total_vms }}</p>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center"><i class="fas fa-server text-blue-400 text-lg"></i></div>
+            <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center"><i class="fas fa-server text-orange-400 text-lg"></i></div>
         </div>
         <div class="mt-3 flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="text-green-400 font-medium">{{ stats.running_vms }}</span><span class="text-gray-500">running</span></span>
@@ -61,7 +61,7 @@
         </div>
         <div class="mt-3 flex items-center gap-3 text-xs">
             <span class="text-purple-400 font-medium">{{ stats.resellers }}</span><span class="text-gray-500">resellers</span>
-            <span class="text-blue-400 font-medium ml-2">{{ stats.clients }}</span><span class="text-gray-500">clients</span>
+            <span class="text-orange-400 font-medium ml-2">{{ stats.clients }}</span><span class="text-gray-500">clients</span>
         </div>
     </div>
     <div class="stat-card rounded-xl p-5 animate-in">
@@ -115,7 +115,7 @@
 {% if current_user.role == 'admin' %}
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 animate-in">
     <div class="card rounded-xl p-5">
-        <h4 class="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2"><i class="fas fa-chart-pie text-blue-400"></i>VM Status</h4>
+        <h4 class="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2"><i class="fas fa-chart-pie text-orange-400"></i>VM Status</h4>
         <div class="flex items-center justify-center gap-6">
             <div class="relative w-24 h-24">
                 <svg class="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
@@ -156,7 +156,7 @@
     <div class="lg:col-span-2 card rounded-xl animate-in">
         <div class="flex items-center justify-between p-5 border-b border-gray-800/50">
             <h3 class="font-bold text-white">Recent Virtual Machines</h3>
-            <a href="/vms" class="text-sm text-blue-400 hover:text-blue-300 font-medium">View All <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
+            <a href="/vms" class="text-sm text-orange-400 hover:text-orange-300 font-medium">View All <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
         </div>
         <div class="p-5">
             {% if recent_vms %}
@@ -164,7 +164,7 @@
                 {% for vm in recent_vms %}
                 <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition group">
                     <div class="flex items-center space-x-3 min-w-0">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center"><i class="fas fa-server text-blue-400"></i></div>
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center"><i class="fas fa-server text-orange-400"></i></div>
                         <div class="min-w-0">
                             <p class="font-medium text-white text-sm">{{ vm.name }}</p>
                             <p class="text-xs text-gray-500 truncate">{{ vm.os_type }}/{{ vm.os_version }} · {{ vm.cpus }} vCPU · {{ vm.ram }}MB</p>
@@ -174,7 +174,7 @@
                         <span class="badge {{ 'badge-success' if vm.status == 'running' else 'badge-danger' }}"><span class="status-dot {{ vm.status }}"></span>{{ vm.status }}</span>
                         <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
                             {% if vm.status == 'running' %}
-                            <a href="/vnc/{{ vm.uuid }}" target="_blank" class="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"><i class="fas fa-display text-xs"></i></a>
+                            <a href="/vnc/{{ vm.uuid }}" target="_blank" class="p-2 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"><i class="fas fa-display text-xs"></i></a>
                             <button onclick="controlVM('{{ vm.uuid }}','stop')" class="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><i class="fas fa-stop text-xs"></i></button>
                             {% else %}
                             <button onclick="controlVM('{{ vm.uuid }}','start')" class="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20"><i class="fas fa-play text-xs"></i></button>
@@ -196,7 +196,7 @@
     <div class="card rounded-xl animate-in">
         <div class="flex items-center justify-between p-5 border-b border-gray-800/50">
             <h3 class="font-bold text-white">Recent Activity</h3>
-            <a href="/activity" class="text-sm text-blue-400 hover:text-blue-300 font-medium">View All <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
+            <a href="/activity" class="text-sm text-orange-400 hover:text-orange-300 font-medium">View All <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
         </div>
         <div class="p-5">
             {% if recent_activity %}
@@ -218,8 +218,8 @@
 
 {% if current_user.role == 'admin' %}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in">
-    <a href="/users/create" class="card rounded-xl p-5 text-center hover:border-blue-500/30 transition group">
-        <div class="w-12 h-12 mx-auto rounded-xl bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition"><i class="fas fa-user-plus text-blue-400"></i></div>
+    <a href="/users/create" class="card rounded-xl p-5 text-center hover:border-orange-500/30 transition group">
+        <div class="w-12 h-12 mx-auto rounded-xl bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition"><i class="fas fa-user-plus text-orange-400"></i></div>
         <p class="font-semibold text-white text-sm">Add User</p>
     </a>
     <a href="/vms/create" class="card rounded-xl p-5 text-center hover:border-green-500/30 transition group">

@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-bold text-white">{{ vm.name }}</h1>
         <p class="text-gray-500 mt-1">
             {{ vm.os_type }}/{{ vm.os_version }}
-            {% if vm.node_name %}<span class="text-blue-400">· {{ vm.node_name }}</span>{% endif %}
+            {% if vm.node_name %}<span class="text-orange-400">· {{ vm.node_name }}</span>{% endif %}
             · <span class="text-gray-400">{{ vm.owner }}</span>
         </p>
     </div>
@@ -23,7 +23,7 @@
 
 <div class="mb-6 animate-in">
     <div class="flex space-x-1 bg-[#0f1320] rounded-xl p-1.5 border border-gray-800/50 overflow-x-auto">
-        <button onclick="switchTab('config')" id="tabConfig" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap active bg-blue-500/20 text-blue-400"><i class="fas fa-wrench mr-2"></i>Configuration</button>
+        <button onclick="switchTab('config')" id="tabConfig" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap active bg-orange-500/20 text-orange-400"><i class="fas fa-wrench mr-2"></i>Configuration</button>
         <button onclick="switchTab('network')" id="tabNetwork" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap text-gray-500 hover:text-gray-300"><i class="fas fa-shield-halved mr-2"></i>Network &amp; Security</button>
         <button onclick="switchTab('backups')" id="tabBackups" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap text-gray-500 hover:text-gray-300"><i class="fas fa-floppy-disk mr-2"></i>Backups &amp; Snapshots</button>
         <button onclick="switchTab('advanced')" id="tabAdvanced" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap text-gray-500 hover:text-gray-300"><i class="fas fa-microchip mr-2"></i>Advanced</button>
@@ -33,7 +33,7 @@
 
 <div id="tabContentConfig" class="tab-content space-y-6">
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-circle-info text-blue-400"></i>Basic Information</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-circle-info text-orange-400"></i>Basic Information</h2>
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <div class="p-3 rounded-xl bg-white/5">
                 <span class="text-gray-500 text-xs">Name</span><br>
@@ -68,7 +68,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-simple text-blue-400"></i>Resources</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-simple text-orange-400"></i>Resources</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
                 <div class="flex justify-between text-sm mb-1.5"><span class="text-gray-500">vCPU</span><span class="text-gray-300 font-medium">{{ vm.cpus }} Cores</span></div>
@@ -88,7 +88,7 @@
         </div>
         {% if current_user.role in ['admin','reseller'] %}
         <form id="upgradeForm" class="mt-6 border-t border-gray-800/50 pt-4" onsubmit="return doUpgrade(event)">
-            <p class="text-sm text-gray-400 mb-3 flex items-center gap-2"><i class="fas fa-arrow-up text-blue-400"></i>Upgrade / Downgrade Resources</p>
+            <p class="text-sm text-gray-400 mb-3 flex items-center gap-2"><i class="fas fa-arrow-up text-orange-400"></i>Upgrade / Downgrade Resources</p>
             <div class="grid grid-cols-3 gap-4">
                 <div><label class="block text-xs font-medium text-gray-400 mb-1">vCPU</label><input type="number" name="cpus" value="{{ vm.cpus }}" min="1" max="64" class="input-field w-full rounded-xl px-4 py-3"></div>
                 <div><label class="block text-xs font-medium text-gray-400 mb-1">RAM (MB)</label><input type="number" name="ram" value="{{ vm.ram }}" min="256" step="256" class="input-field w-full rounded-xl px-4 py-3"></div>
@@ -100,7 +100,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-power-off text-blue-400"></i>Power Actions</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-power-off text-orange-400"></i>Power Actions</h2>
         <div class="flex flex-wrap gap-2">
             <button onclick="controlVM('start')" class="btn-success px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-play"></i>Start</button>
             <button onclick="controlVM('stop')" class="btn-danger px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-stop"></i>Stop</button>
@@ -117,7 +117,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-copy text-blue-400"></i>Clone / Duplicate</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-copy text-orange-400"></i>Clone / Duplicate</h2>
         <div class="flex gap-3">
             <input type="text" id="cloneVmName" placeholder="New VM name" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="cloneVM()" class="btn-blue px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-copy"></i>Clone</button>
@@ -125,7 +125,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-tag text-blue-400"></i>Rename</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-tag text-orange-400"></i>Rename</h2>
         <div class="flex gap-3">
             <input type="text" id="renameVmInput" value="{{ vm.name }}" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="renameVM()" class="btn-blue px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-pen"></i>Rename</button>
@@ -133,7 +133,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-globe text-blue-400"></i>Change Hostname</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-globe text-orange-400"></i>Change Hostname</h2>
         <div class="flex gap-3">
             <input type="text" id="changeHostnameInput" value="{{ vm.hostname }}" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="changeHostname()" class="btn-blue px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-server"></i>Update</button>
@@ -141,7 +141,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-key text-blue-400"></i>Reset Password</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-key text-orange-400"></i>Reset Password</h2>
         <div class="flex gap-3">
             <input type="text" id="resetPasswordInput" value="" placeholder="Enter new password" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="resetPassword()" class="btn-warning px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-lock"></i>Reset</button>
@@ -150,7 +150,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-tags text-blue-400"></i>Tags &amp; Labels</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-tags text-orange-400"></i>Tags &amp; Labels</h2>
         <div class="flex gap-3 mb-4">
             <input type="text" id="tagInput" placeholder="Enter tag name" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <select id="tagColorSelect" class="input-field rounded-xl px-3 py-3 text-sm">
@@ -169,7 +169,7 @@
 
 <div id="tabContentNetwork" class="tab-content hidden space-y-6">
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-shield-halved text-blue-400"></i>Firewall Rules</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-shield-halved text-orange-400"></i>Firewall Rules</h2>
         <div id="firewallList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <form id="firewallForm" class="space-y-3 border-t border-gray-800/50 pt-4" onsubmit="return addFirewallRule(event)">
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -207,7 +207,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-network-wired text-blue-400"></i>IPv4 / IPv6 Management</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-network-wired text-orange-400"></i>IPv4 / IPv6 Management</h2>
         <div id="ipList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <div class="flex gap-3 border-t border-gray-800/50 pt-4">
             <input type="text" id="addIpInput" placeholder="Enter IP address" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
@@ -220,7 +220,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-cloud-arrow-up text-blue-400"></i>Floating IP</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-cloud-arrow-up text-orange-400"></i>Floating IP</h2>
         <div class="flex gap-3 items-end">
             <div class="flex-1">
                 <label class="block text-xs font-medium text-gray-400 mb-1">Floating IP Address</label>
@@ -232,7 +232,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-arrow-right-arrow-left text-blue-400"></i>Reverse DNS (PTR)</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-arrow-right-arrow-left text-orange-400"></i>Reverse DNS (PTR)</h2>
         <div class="flex gap-3">
             <input type="text" id="ptrRecordInput" placeholder="e.g. mail.example.com" value="{{ vm.ptr_record or '' }}" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="savePTR()" class="btn-blue px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-floppy-disk"></i>Save</button>
@@ -241,7 +241,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-server text-blue-400"></i>Custom DNS</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-server text-orange-400"></i>Custom DNS</h2>
         <div class="flex gap-3">
             <input type="text" id="dnsServersInput" placeholder="e.g. 8.8.8.8, 1.1.1.1" value="{{ vm.dns_servers|join(', ') if vm.dns_servers else '' }}" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="saveDNS()" class="btn-blue px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-floppy-disk"></i>Save</button>
@@ -250,7 +250,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-blue-400"></i>Private Network</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-orange-400"></i>Private Network</h2>
         <div class="flex gap-3">
             <select id="privateNetworkSelect" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
                 <option value="">-- Select Network --</option>
@@ -262,7 +262,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-shield text-blue-400"></i>DDoS Protection</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-shield text-orange-400"></i>DDoS Protection</h2>
         <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
                 <p class="text-sm text-gray-300">DDoS Protection</p>
@@ -276,7 +276,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-key text-blue-400"></i>SSH Keys</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-key text-orange-400"></i>SSH Keys</h2>
         <div id="sshKeyList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <div class="border-t border-gray-800/50 pt-4 space-y-3">
             <h3 class="text-sm font-medium text-gray-400">Add SSH Key</h3>
@@ -295,7 +295,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-sort text-blue-400"></i>Boot Order</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-sort text-orange-400"></i>Boot Order</h2>
         <div class="flex gap-3 items-center">
             <select id="bootOrderSelect" class="input-field rounded-xl px-4 py-3 text-sm flex-1 max-w-xs">
                 <option value="disk" {{ 'selected' if vm.boot_order=='disk' else '' }}>Disk</option>
@@ -310,7 +310,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-microchip text-blue-400"></i>BIOS / UEFI</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-microchip text-orange-400"></i>BIOS / UEFI</h2>
         <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
                 <p class="text-sm text-gray-300">Firmware Type</p>
@@ -326,13 +326,13 @@
 
 <div id="tabContentBackups" class="tab-content hidden space-y-6">
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-circle-play text-blue-400"></i>Manual Backup</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-circle-play text-orange-400"></i>Manual Backup</h2>
         <button onclick="backupNow()" class="btn-green px-6 py-3 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-play"></i>Backup Now</button>
         <p class="text-xs text-gray-600 mt-2">Creates an immediate backup/snapshot of this VM.</p>
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-clock text-blue-400"></i>Backup Schedule</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-clock text-orange-400"></i>Backup Schedule</h2>
         <form id="backupScheduleForm" class="space-y-4" onsubmit="return saveBackupSchedule(event)">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
@@ -366,13 +366,13 @@
 
     <div class="card rounded-xl p-6 animate-in">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-camera text-blue-400"></i>Snapshots / Backups</h2>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-camera text-orange-400"></i>Snapshots / Backups</h2>
         </div>
         <div id="backupList" class="text-sm text-gray-500">Loading...</div>
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-circle-plus text-blue-400"></i>Create Snapshot</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-circle-plus text-orange-400"></i>Create Snapshot</h2>
         <div class="flex gap-3">
             <input type="text" id="snapshotNameInput" placeholder="Enter snapshot name" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
             <button onclick="createSnapshot()" class="btn-blue px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-plus"></i>Create Snapshot</button>
@@ -381,7 +381,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-hard-drive text-blue-400"></i>Create Template</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-hard-drive text-orange-400"></i>Create Template</h2>
         <p class="text-sm text-gray-500 mb-3">Save this VM as a template for quick deployment.</p>
         <div class="flex gap-3">
             <input type="text" id="templateNameInput" placeholder="Template name" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
@@ -390,7 +390,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-rocket text-blue-400"></i>Deploy From Template</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-rocket text-orange-400"></i>Deploy From Template</h2>
         <div class="flex gap-3">
             <select id="deployTemplateSelect" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
                 <option value="">-- Select Template --</option>
@@ -435,7 +435,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-life-ring text-blue-400"></i>Rescue Mode</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-life-ring text-orange-400"></i>Rescue Mode</h2>
         <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
                 <p class="text-sm text-gray-300">Rescue Mode</p>
@@ -461,7 +461,7 @@
             <div class="border-t border-gray-800/50 pt-4">
                 <h3 class="text-sm font-medium text-gray-400 mb-2">Upload Custom ISO</h3>
                 <div class="flex gap-3">
-                    <input type="file" id="customIsoUpload" accept=".iso" class="input-field flex-1 rounded-xl px-4 py-3 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20">
+                    <input type="file" id="customIsoUpload" accept=".iso" class="input-field flex-1 rounded-xl px-4 py-3 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500/10 file:text-orange-400 hover:file:bg-orange-500/20">
                     <button onclick="uploadISO()" class="btn-blue px-4 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-upload"></i>Upload</button>
                 </div>
                 <p class="text-xs text-gray-600 mt-2">Max file size: 2GB</p>
@@ -473,7 +473,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-database text-blue-400"></i>Additional Storage</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-database text-orange-400"></i>Additional Storage</h2>
         <div id="diskList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <div class="border-t border-gray-800/50 pt-4">
             <h3 class="text-sm font-medium text-gray-400 mb-3">Attach New Disk</h3>
@@ -492,7 +492,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-scroll text-blue-400"></i>Startup Script</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-scroll text-orange-400"></i>Startup Script</h2>
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-2">Script Content</label>
@@ -509,7 +509,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-cloud text-blue-400"></i>Cloud-Init Configuration</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-cloud text-orange-400"></i>Cloud-Init Configuration</h2>
         <form id="cloudInitForm" class="space-y-4" onsubmit="return saveCloudInit(event)">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -563,7 +563,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-lock text-blue-400"></i>Protection</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-lock text-orange-400"></i>Protection</h2>
         <div class="space-y-3">
             <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
                 <div>
@@ -613,7 +613,7 @@
 
 <div id="tabContentAlerts" class="tab-content hidden space-y-6">
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-gauge-high text-blue-400"></i>Resource Alerts</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-gauge-high text-orange-400"></i>Resource Alerts</h2>
         <p class="text-sm text-gray-500 mb-4">Get notified when resource usage exceeds configured thresholds.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="p-4 rounded-xl bg-white/5">
@@ -660,7 +660,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-bell text-blue-400"></i>Notification Channels</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-bell text-orange-400"></i>Notification Channels</h2>
         <div id="notificationChannelsList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <div class="border-t border-gray-800/50 pt-4">
             <h3 class="text-sm font-medium text-gray-400 mb-3">Add Channel</h3>
@@ -689,7 +689,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-sliders text-blue-400"></i>Notification Rules</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-sliders text-orange-400"></i>Notification Rules</h2>
         <p class="text-sm text-gray-500 mb-4">Map event types to notification channels.</p>
         <div id="notificationRulesList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <div class="border-t border-gray-800/50 pt-4 flex gap-3">
@@ -714,7 +714,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-code text-blue-400"></i>Webhook Integration</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-code text-orange-400"></i>Webhook Integration</h2>
         <div id="webhookList" class="text-sm text-gray-500 mb-4">Loading...</div>
         <div class="border-t border-gray-800/50 pt-4">
             <h3 class="text-sm font-medium text-gray-400 mb-3">Add Webhook</h3>
@@ -743,7 +743,7 @@
 
     {% if current_user.role in ['admin','reseller'] %}
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-arrow-right-arrow-left text-blue-400"></i>Transfer Ownership</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-arrow-right-arrow-left text-orange-400"></i>Transfer Ownership</h2>
         <p class="text-sm text-gray-500 mb-3">Transfer this VM to another user.</p>
         <div class="flex gap-3">
             <input type="text" id="transferUserInput" placeholder="Search by username or email" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
@@ -753,7 +753,7 @@
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-arrows-spin text-blue-400"></i>Migrate VM</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-arrows-spin text-orange-400"></i>Migrate VM</h2>
         <p class="text-sm text-gray-500 mb-3">Migrate this VM to another node. VM will be temporarily unavailable.</p>
         <div class="flex gap-3">
             <select id="migrateNodeSelect" class="input-field flex-1 rounded-xl px-4 py-3 text-sm">
@@ -766,14 +766,14 @@
     {% endif %}
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-clock-rotate-left text-blue-400"></i>Activity Log</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-clock-rotate-left text-orange-400"></i>Activity Log</h2>
         <div id="activityLog" class="text-sm max-h-80 overflow-y-auto space-y-1">
             <div class="text-center py-8 text-gray-600">Loading activity log...</div>
         </div>
     </div>
 
     <div class="card rounded-xl p-6 animate-in">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-download text-blue-400"></i>Connection Details</h2>
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-download text-orange-400"></i>Connection Details</h2>
         <button onclick="downloadConnectionDetails()" class="btn-blue px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"><i class="fas fa-file-lines"></i>Download Connection Info</button>
         <p class="text-xs text-gray-600 mt-2">Downloads a text file with SSH, VNC, and login credentials.</p>
     </div>
@@ -811,14 +811,14 @@ const OS_IMAGES = {{ os_images_json|safe }};
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('active', 'bg-blue-500/20', 'text-blue-400');
+        el.classList.remove('active', 'bg-orange-500/20', 'text-orange-400');
         el.classList.add('text-gray-500');
     });
     const content = document.getElementById('tabContent' + tab.charAt(0).toUpperCase() + tab.slice(1));
     if (content) content.classList.remove('hidden');
     const btn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
     if (btn) {
-        btn.classList.add('active', 'bg-blue-500/20', 'text-blue-400');
+        btn.classList.add('active', 'bg-orange-500/20', 'text-orange-400');
         btn.classList.remove('text-gray-500');
     }
 }
@@ -1250,7 +1250,7 @@ function loadBackups() {
             '<div><p class="text-sm text-white">' + (b.name || 'Backup #' + b.id) + '</p>' +
             '<p class="text-xs text-gray-500">' + (b.created_at || '') + ' · ' + (b.size ? (b.size / 1024 / 1024).toFixed(1) + 'MB' : 'N/A') + '</p></div>' +
             '<div class="flex gap-1">' +
-            '<button onclick="downloadBackup(' + b.id + ')" class="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs hover:bg-blue-500/20"><i class="fas fa-download"></i></button>' +
+            '<button onclick="downloadBackup(' + b.id + ')" class="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs hover:bg-orange-500/20"><i class="fas fa-download"></i></button>' +
             '<button onclick="restoreBackup(' + b.id + ')" class="px-3 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 text-xs hover:bg-yellow-500/20"><i class="fas fa-rotate-left"></i></button>' +
             '<button onclick="deleteBackup(' + b.id + ')" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs hover:bg-red-500/20"><i class="fas fa-trash-can"></i></button>' +
             '</div></div>'
@@ -1752,28 +1752,28 @@ function loadActivityLog() {
         const icons = {
             'vm_started': 'fa-play text-green-400',
             'vm_stopped': 'fa-stop text-red-400',
-            'vm_created': 'fa-plus text-blue-400',
+            'vm_created': 'fa-plus text-orange-400',
             'vm_deleted': 'fa-trash text-red-400',
             'vm_rebooted': 'fa-rotate text-yellow-400',
             'vm_suspended': 'fa-pause text-yellow-400',
             'vm_unsuspended': 'fa-play text-green-400',
-            'backup_created': 'fa-camera text-blue-400',
+            'backup_created': 'fa-camera text-orange-400',
             'backup_restored': 'fa-rotate-left text-yellow-400',
             'backup_deleted': 'fa-trash text-red-400',
             'snapshot_created': 'fa-camera text-purple-400',
             'snapshot_reverted': 'fa-rotate-left text-yellow-400',
             'snapshot_deleted': 'fa-trash text-red-400',
-            'firewall_updated': 'fa-shield text-blue-400',
+            'firewall_updated': 'fa-shield text-orange-400',
             'password_reset': 'fa-key text-yellow-400',
             'os_reinstall': 'fa-rotate text-red-400',
             'resources_upgraded': 'fa-arrow-up text-green-400',
-            'ip_added': 'fa-plus-circle text-blue-400',
+            'ip_added': 'fa-plus-circle text-orange-400',
             'ip_removed': 'fa-minus-circle text-red-400',
-            'floating_ip_assigned': 'fa-link text-blue-400',
+            'floating_ip_assigned': 'fa-link text-orange-400',
             'floating_ip_removed': 'fa-unlink text-red-400',
             'iso_mounted': 'fa-circle-play text-purple-400',
             'iso_unmounted': 'fa-eject text-purple-400',
-            'tag_added': 'fa-tag text-blue-400',
+            'tag_added': 'fa-tag text-orange-400',
             'tag_removed': 'fa-tag text-red-400',
         };
         el.innerHTML = '<div class="space-y-1 max-h-80 overflow-y-auto">' + d.activities.map(a => {

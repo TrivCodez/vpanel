@@ -39,7 +39,7 @@
                             <button onclick="markPaid('{{ inv.invoice_no }}')" class="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition" title="Mark Paid"><i class="fas fa-check"></i></button>
                             {% endif %}
                             {% if inv.status == 'pending' and current_user.role == 'client' %}
-                            <button onclick="checkout('{{ inv.invoice_no }}')" class="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition" title="Pay with Card"><i class="fas fa-credit-card"></i></button>
+                            <button onclick="checkout('{{ inv.invoice_no }}')" class="p-2 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition" title="Pay with Card"><i class="fas fa-credit-card"></i></button>
                             {% endif %}
                         </div>
                     </td>

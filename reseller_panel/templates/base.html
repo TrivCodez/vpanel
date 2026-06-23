@@ -3,228 +3,339 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - {{ settings_get('site_name', 'vPanel') }}</title>
+    <title>{{ title }} - {{ settings_get('site_name', 'lavadev') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         *{font-family:'Inter',sans-serif;margin:0;padding:0;box-sizing:border-box}
-        :root{--bg-primary:#06080f;--bg-secondary:#0b0f1a;--bg-card:#0f1320;--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;--border-color:rgba(59,130,246,0.1);--hover-bg:rgba(59,130,246,0.08);--input-bg:#0d1117}
-        [data-theme="light"]{--bg-primary:#f8fafc;--bg-secondary:#ffffff;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--text-muted:#94a3b8;--border-color:rgba(0,0,0,0.08);--hover-bg:rgba(0,0,0,0.04);--input-bg:#f1f5f9}
+
+        /* === LAVADEV DARK THEME === */
+        :root{
+            --bg-primary:#08060a;
+            --bg-secondary:#0f0b14;
+            --bg-card:#130e1a;
+            --text-primary:#f0eaf8;
+            --text-secondary:#a895c4;
+            --text-muted:#6b5a84;
+            --border-color:rgba(220,80,30,0.12);
+            --hover-bg:rgba(220,80,30,0.07);
+            --input-bg:#100d16;
+            --accent1:#f97316;
+            --accent2:#ef4444;
+            --accent-glow:rgba(249,115,22,0.18);
+        }
+        [data-theme="light"]{
+            --bg-primary:#faf5f0;
+            --bg-secondary:#fff9f5;
+            --bg-card:#ffffff;
+            --text-primary:#1a0f08;
+            --text-secondary:#6b4530;
+            --text-muted:#a8784a;
+            --border-color:rgba(220,80,30,0.15);
+            --hover-bg:rgba(220,80,30,0.05);
+            --input-bg:#fff5ee;
+            --accent1:#ea6b0a;
+            --accent2:#dc2626;
+            --accent-glow:rgba(249,115,22,0.12);
+        }
+
         body{background:var(--bg-primary);color:var(--text-primary)}
-        ::-webkit-scrollbar{width:6px;height:6px}
+
+        /* Scrollbar */
+        ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-track{background:var(--bg-primary)}
-        ::-webkit-scrollbar-thumb{background:#1e2a4a;border-radius:3px}
-        ::-webkit-scrollbar-thumb:hover{background:#2d3f6a}
-        .sidebar{background:linear-gradient(180deg,var(--bg-secondary) 0%,#0f1a2e 50%,var(--bg-primary) 100%);border-right:1px solid var(--border-color)}
-        [data-theme="light"] .sidebar{background:var(--bg-secondary);border-right:1px solid var(--border-color)}
-        .sidebar-item{position:relative;transition:all 0.2s ease;color:var(--text-muted)}
+        ::-webkit-scrollbar-thumb{background:rgba(249,115,22,0.3);border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:rgba(249,115,22,0.55)}
+
+        /* Sidebar */
+        .sidebar{
+            background:linear-gradient(180deg,var(--bg-secondary) 0%,#100a18 60%,var(--bg-primary) 100%);
+            border-right:1px solid var(--border-color);
+            position:relative;
+        }
+        .sidebar::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:2px;
+            background:linear-gradient(90deg,#f97316,#ef4444,#7c3aed);
+        }
+        [data-theme="light"] .sidebar{background:var(--bg-secondary)}
+
+        .sidebar-item{position:relative;transition:all 0.2s ease;color:var(--text-muted);border-radius:10px}
         .sidebar-item:hover{background:var(--hover-bg);color:var(--text-primary)}
-        .sidebar-item.active{background:linear-gradient(90deg,rgba(59,130,246,0.15),transparent);color:#60a5fa;border-left:2px solid #3b82f6}
-        .card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;transition:all 0.2s ease}
-        .card:hover{border-color:rgba(59,130,246,0.2)}
-        [data-theme="light"] .card{box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-        [data-theme="light"] .card:hover{border-color:rgba(59,130,246,0.3)}
-        .card-glass{background:rgba(15,19,32,0.8);backdrop-filter:blur(16px);border:1px solid var(--border-color);border-radius:16px}
-        [data-theme="light"] .card-glass{background:rgba(255,255,255,0.9)}
-        .btn-primary{background:linear-gradient(135deg,#2563eb,#7c3aed);transition:all 0.2s ease;color:#fff}
-        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,99,235,0.25)}
+        .sidebar-item.active{
+            background:linear-gradient(90deg,rgba(249,115,22,0.15),rgba(239,68,68,0.06));
+            color:#fb923c;
+            border-left:2px solid #f97316;
+        }
+
+        /* Cards */
+        .card{
+            background:var(--bg-card);
+            border:1px solid var(--border-color);
+            border-radius:16px;
+            transition:all 0.2s ease;
+        }
+        .card:hover{border-color:rgba(249,115,22,0.22)}
+        [data-theme="light"] .card{box-shadow:0 1px 3px rgba(180,60,0,0.06)}
+        .card-glass{
+            background:rgba(19,14,26,0.85);
+            backdrop-filter:blur(16px);
+            border:1px solid var(--border-color);
+            border-radius:16px;
+        }
+        [data-theme="light"] .card-glass{background:rgba(255,249,245,0.93)}
+
+        /* Buttons */
+        .btn-primary{background:linear-gradient(135deg,#f97316,#ef4444);transition:all 0.2s ease;color:#fff}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(249,115,22,0.3)}
         .btn-success{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
         .btn-success:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(5,150,105,0.25)}
         .btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
-        .btn-danger:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(220,38,38,0.25)}
+        .btn-danger:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(220,38,38,0.3)}
         .btn-warning{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
         .btn-warning:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(217,119,6,0.25)}
-        .input-field{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-primary);border-radius:10px;transition:all 0.2s}
-        .input-field:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.15);outline:none}
+        .btn-blue{background:linear-gradient(135deg,#f97316,#ef4444);transition:all 0.2s ease;color:#fff}
+        .btn-blue:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(249,115,22,0.3)}
+        .btn-green{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+        .btn-green:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(5,150,105,0.25)}
+        .btn-red{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+        .btn-red:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(220,38,38,0.3)}
+
+        /* Inputs */
+        .input-field{
+            background:var(--input-bg);
+            border:1px solid var(--border-color);
+            color:var(--text-primary);
+            border-radius:10px;
+            transition:all 0.2s;
+        }
+        .input-field:focus{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,0.13);outline:none}
         .input-field::placeholder{color:var(--text-muted)}
         select.input-field option{background:var(--bg-card);color:var(--text-primary)}
+
+        /* Badges */
         .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600;gap:4px}
         .badge-success{background:rgba(5,150,105,0.15);color:#34d399}
         .badge-danger{background:rgba(220,38,38,0.15);color:#f87171}
         .badge-warning{background:rgba(217,119,6,0.15);color:#fbbf24}
-        .badge-info{background:rgba(37,99,235,0.15);color:#60a5fa}
+        .badge-info{background:rgba(249,115,22,0.15);color:#fb923c}
         .badge-purple{background:rgba(124,58,237,0.15);color:#a78bfa}
+
+        /* Stat cards */
         .stat-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;transition:all 0.3s ease}
-        .stat-card:hover{border-color:rgba(59,130,246,0.2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
-        .gradient-text{background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .stat-card:hover{border-color:rgba(249,115,22,0.25);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+
+        /* Gradient text */
+        .gradient-text{background:linear-gradient(135deg,#fb923c,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+        /* Progress */
         .progress-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden}
         [data-theme="light"] .progress-bar{background:rgba(0,0,0,0.08)}
         .progress-fill{height:100%;border-radius:3px;transition:width 0.6s ease}
-        .table-header{background:rgba(59,130,246,0.04);border-bottom:1px solid var(--border-color)}
+
+        /* Table */
+        .table-header{background:rgba(249,115,22,0.04);border-bottom:1px solid var(--border-color)}
         .table-row{transition:background 0.15s ease}
         .table-row:hover{background:var(--hover-bg)}
-        .glow{box-shadow:0 0 40px rgba(37,99,235,0.1)}
-        .btn-blue{background:linear-gradient(135deg,#2563eb,#7c3aed);transition:all 0.2s ease;color:#fff}
-        .btn-blue:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,99,235,0.25)}
-        .btn-green{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
-        .btn-green:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(5,150,105,0.25)}
-        .btn-red{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
-        .btn-red:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(220,38,38,0.25)}
-        .table-wrap{overflow-x:auto; -webkit-overflow-scrolling: touch;}
+
+        /* Glow */
+        .glow{box-shadow:0 0 40px rgba(249,115,22,0.1)}
+
+        /* Status dots */
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
         .status-dot.running{background:#34d399;box-shadow:0 0 8px rgba(5,150,105,0.4)}
         .status-dot.stopped{background:var(--text-muted)}
         .status-dot.suspended{background:#f87171;box-shadow:0 0 8px rgba(220,38,38,0.3)}
+
+        /* Lava logo glow */
+        .lava-logo{
+            background:linear-gradient(135deg,#f97316,#ef4444);
+            box-shadow:0 0 18px rgba(249,115,22,0.4);
+        }
+        .lava-logo-ring{
+            box-shadow:0 0 0 1px rgba(249,115,22,0.3),0 0 18px rgba(249,115,22,0.15);
+        }
+
         @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.5}}
         .status-dot.running{animation:pulse-dot 2s infinite}
+        @keyframes lava-pulse{0%,100%{box-shadow:0 0 18px rgba(249,115,22,0.4)}50%{box-shadow:0 0 28px rgba(249,115,22,0.7)}}
+        .lava-logo{animation:lava-pulse 3s ease-in-out infinite}
         @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .animate-in{animation:slideIn 0.3s ease forwards}
+
+        /* nav section headers */
+        .nav-section-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600;padding:12px 16px 4px}
+
+        /* Misc compat */
+        .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
         [data-theme="light"] .text-white{color:var(--text-primary)!important}
         [data-theme="light"] .text-gray-300{color:var(--text-secondary)!important}
         [data-theme="light"] .text-gray-400{color:var(--text-muted)!important}
-        [data-theme="light"] .text-gray-500{color:#94a3b8!important}
-        [data-theme="light"] .text-gray-600{color:#94a3b8!important}
         [data-theme="light"] .border-gray-800\/50{border-color:var(--border-color)!important}
         [data-theme="light"] .bg-white\/5{background:rgba(0,0,0,0.03)!important}
         [data-theme="light"] .bg-black\/40{background:rgba(0,0,0,0.04)!important}
-        @media (max-width: 768px) {input,select,textarea{font-size:16px!important;}}
+        @media (max-width:768px){input,select,textarea{font-size:16px!important}}
     </style>
     {% set branding_css = settings_get('custom_css', '') %}
     {% if branding_css %}<style>{{ branding_css }}</style>{% endif %}
 </head>
 <body>
-    <div class="flex h-screen">
-        {% if current_user %}
-        <div class="sidebar w-64 flex-shrink-0 hidden lg:flex flex-col z-30">
-            <div class="p-5 border-b border-gray-800/50">
-                <div class="flex items-center space-x-3">
-                    {% set site_logo = settings_get('site_logo', '') %}
-                    {% if site_logo %}
-                    <img src="{{ site_logo }}" class="w-10 h-10 rounded-xl object-cover" alt="Logo">
-                    {% else %}
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20">V</div>
-                    {% endif %}
-                    <div><h1 class="font-bold text-white text-lg">{{ settings_get('site_name', 'vPanel') }}</h1><p class="text-[10px] text-gray-500 tracking-wider uppercase">Reseller Platform</p></div>
+<div class="flex h-screen">
+    {% if current_user %}
+    <!-- Desktop Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 hidden lg:flex flex-col z-30">
+        <div class="p-5 border-b border-orange-900/20">
+            <div class="flex items-center space-x-3">
+                {% set site_logo = settings_get('site_logo', '') %}
+                {% if site_logo %}
+                <img src="{{ site_logo }}" class="w-10 h-10 rounded-xl object-cover" alt="Logo">
+                {% else %}
+                <div class="lava-logo w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg select-none">🌋</div>
+                {% endif %}
+                <div>
+                    <h1 class="font-black text-white text-lg tracking-tight">{{ settings_get('site_name', 'lavadev') }}</h1>
+                    <p class="text-[10px] text-orange-600/70 tracking-widest uppercase font-semibold">Hosting Panel</p>
                 </div>
-            </div>
-            <div class="flex-1 overflow-y-auto p-3 space-y-0.5">
-                {% macro nav_item(href, icon, label, page) %}
-                <a href="{{ href }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm {{ 'active' if active_page == page else 'text-gray-500' }}">
-                    <i class="fas {{ icon }} w-5 text-center {{ 'text-blue-400' if active_page == page else '' }}"></i>
-                    <span>{{ label }}</span>
-                    {% if active_page == page %}<div class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></div>{% endif %}
-                </a>
-                {% endmacro %}
-                <div class="text-[10px] text-gray-600 uppercase tracking-widest px-4 py-3 font-semibold">Main</div>
-                {{ nav_item('/dashboard', 'fa-th-large', 'Dashboard', 'dashboard') }}
-                {% if current_user.role in ['admin', 'reseller'] %}
-                {{ nav_item('/vms', 'fa-server', 'Virtual Machines', 'vms') }}
-                {% endif %}
-                {% if current_user.role == 'client' %}
-                {{ nav_item('/my-vms', 'fa-server', 'My VMs', 'my_vms') }}
-                {% endif %}
-                <div class="text-[10px] text-gray-600 uppercase tracking-widest px-4 py-3 pt-5 font-semibold">Management</div>
-                {% if current_user.role in ['admin', 'reseller'] %}
-                {{ nav_item('/users', 'fa-users', 'Users', 'users') }}
-                {{ nav_item('/plans', 'fa-box', 'Plans', 'plans') }}
-                {% endif %}
-                {% if current_user.role == 'admin' %}
-                {{ nav_item('/resellers', 'fa-user-tie', 'Resellers', 'resellers') }}
-                {{ nav_item('/nodes', 'fa-network-wired', 'Nodes', 'nodes') }}
-                {% endif %}
-                {{ nav_item('/invoices', 'fa-file-invoice-dollar', 'Invoices', 'invoices') }}
-                {{ nav_item('/tickets', 'fa-ticket', 'Support', 'tickets') }}
-                {{ nav_item('/knowledge-base', 'fa-book', 'Knowledge Base', 'kb') }}
-                <div class="text-[10px] text-gray-600 uppercase tracking-widest px-4 py-3 pt-5 font-semibold">System</div>
-                {{ nav_item('/activity', 'fa-clock-rotate', 'Activity Log', 'activity') }}
-                {% if current_user.role == 'admin' %}
-                {{ nav_item('/promos', 'fa-percent', 'Promo Codes', 'promos') }}
-                {{ nav_item('/settings', 'fa-sliders', 'Settings', 'settings') }}
-                {% endif %}
-            </div>
-            <div class="p-3 border-t border-gray-800/50">
-                <div class="flex items-center justify-between px-4 py-2">
-                    <button onclick="toggleTheme()" class="text-gray-500 hover:text-yellow-400 transition text-sm flex items-center gap-2" title="Toggle Theme">
-                        <i id="themeIcon" class="fas {{ 'fa-sun' if get_theme() == 'light' else 'fa-moon' }}"></i>
-                        <span class="text-xs">{{ 'Light' if get_theme() == 'light' else 'Dark' }}</span>
-                    </button>
-                    <a href="/status" target="_blank" class="text-gray-500 hover:text-green-400 transition text-sm" title="Status Page"><i class="fas fa-heart-pulse"></i></a>
-                </div>
-                <a href="/profile" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-white/5 transition">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold shadow-sm">{{ current_user.username[0]|upper }}</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-200 truncate">{{ current_user.username }}</p>
-                        <p class="text-xs text-gray-500">{{ current_user.role|title }}</p>
-                    </div>
-                    <a href="/logout" class="text-gray-600 hover:text-red-400 transition" title="Logout"><i class="fas fa-right-from-bracket"></i></a>
-                </a>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="lg:hidden fixed top-0 left-0 right-0 z-50 card-glass px-4 py-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <button onclick="toggleMobileMenu()" class="text-gray-400 hover:text-white"><i class="fas fa-bars text-lg"></i></button>
-                    <div class="flex items-center space-x-2"><div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">V</div><span class="font-bold text-sm">vPanel</span></div>
-                </div>
-                <a href="/logout" class="text-gray-400 hover:text-red-400"><i class="fas fa-right-from-bracket"></i></a>
             </div>
         </div>
 
-        <div id="mobileMenu" class="fixed inset-0 z-50 hidden">
-            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
-            <div class="absolute left-0 top-0 bottom-0 w-72 bg-[#0b0f1a] p-5 overflow-y-auto border-r border-gray-800/50">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">V</div>
-                        <span class="font-bold text-lg text-white">vPanel</span>
-                    </div>
-                    <button onclick="toggleMobileMenu()" class="text-gray-400 hover:text-white"><i class="fas fa-xmark text-xl"></i></button>
-                </div>
-                <nav class="space-y-0.5">
-                    <a href="/dashboard" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-th-large w-5"></i><span>Dashboard</span></a>
-                    {% if current_user.role in ['admin', 'reseller'] %}<a href="/vms" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-server w-5"></i><span>VMs</span></a>{% endif %}
-                    {% if current_user.role == 'client' %}<a href="/my-vms" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-server w-5"></i><span>My VMs</span></a>{% endif %}
-                    <a href="/plans" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-box w-5"></i><span>Plans</span></a>
-                    <a href="/users" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-users w-5"></i><span>Users</span></a>
-                    {% if current_user.role == 'admin' %}<a href="/resellers" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-user-tie w-5"></i><span>Resellers</span></a>{% endif %}
-                    {% if current_user.role == 'admin' %}<a href="/nodes" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-network-wired w-5"></i><span>Nodes</span></a>{% endif %}
-                    <a href="/invoices" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-file-invoice-dollar w-5"></i><span>Invoices</span></a>
-                    <a href="/tickets" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-ticket w-5"></i><span>Tickets</span></a>
-                    <a href="/activity" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-clock-rotate w-5"></i><span>Activity</span></a>
-                    <div class="pt-4 mt-4 border-t border-gray-800/50">
-                        <a href="/profile" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm"><i class="fas fa-user-gear w-5"></i><span>Profile</span></a>
-                    </div>
-                </nav>
-            </div>
-        </div>
+        <div class="flex-1 overflow-y-auto p-3 space-y-0.5">
+            {% macro nav_item(href, icon, label, page) %}
+            <a href="{{ href }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 text-sm {{ 'active' if active_page == page else '' }}">
+                <i class="fas {{ icon }} w-5 text-center {{ 'text-orange-400' if active_page == page else '' }}"></i>
+                <span>{{ label }}</span>
+                {% if active_page == page %}<div class="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400"></div>{% endif %}
+            </a>
+            {% endmacro %}
 
-        <div class="flex-1 flex flex-col overflow-hidden {{ 'pt-14 lg:pt-0' if current_user else '' }}">
-            <main class="flex-1 overflow-y-auto p-4 lg:p-8">
-                {% block content %}{% endblock %}
-            </main>
-            {% if current_user and settings_get('branding_show', '1') != '0' %}
-            <div class="text-center py-3 text-xs text-gray-600 border-t border-gray-800/50">
-                {{ settings_get('footer_text', 'Powered by vPanel Reseller Platform') }}
-            </div>
+            <div class="nav-section-label">Main</div>
+            {{ nav_item('/dashboard', 'fa-th-large', 'Dashboard', 'dashboard') }}
+            {% if current_user.role in ['admin', 'reseller'] %}
+            {{ nav_item('/vms', 'fa-server', 'Virtual Machines', 'vms') }}
             {% endif %}
+            {% if current_user.role == 'client' %}
+            {{ nav_item('/my-vms', 'fa-server', 'My VMs', 'my_vms') }}
+            {% endif %}
+
+            <div class="nav-section-label">Management</div>
+            {% if current_user.role in ['admin', 'reseller'] %}
+            {{ nav_item('/users', 'fa-users', 'Users', 'users') }}
+            {{ nav_item('/plans', 'fa-box', 'Plans', 'plans') }}
+            {% endif %}
+            {% if current_user.role == 'admin' %}
+            {{ nav_item('/resellers', 'fa-user-tie', 'Resellers', 'resellers') }}
+            {{ nav_item('/nodes', 'fa-network-wired', 'Nodes', 'nodes') }}
+            {% endif %}
+            {{ nav_item('/invoices', 'fa-file-invoice-dollar', 'Invoices', 'invoices') }}
+            {{ nav_item('/tickets', 'fa-ticket', 'Support', 'tickets') }}
+            {{ nav_item('/knowledge-base', 'fa-book', 'Knowledge Base', 'kb') }}
+
+            <div class="nav-section-label">System</div>
+            {{ nav_item('/activity', 'fa-clock-rotate', 'Activity Log', 'activity') }}
+            {% if current_user.role == 'admin' %}
+            {{ nav_item('/promos', 'fa-percent', 'Promo Codes', 'promos') }}
+            {{ nav_item('/settings', 'fa-sliders', 'Settings', 'settings') }}
+            {% endif %}
+        </div>
+
+        <div class="p-3 border-t border-orange-900/20">
+            <div class="flex items-center justify-between px-4 py-2">
+                <button onclick="toggleTheme()" class="text-orange-800 hover:text-orange-400 transition text-sm flex items-center gap-2" title="Toggle Theme">
+                    <i id="themeIcon" class="fas {{ 'fa-sun' if get_theme() == 'light' else 'fa-moon' }}"></i>
+                    <span class="text-xs">{{ 'Light' if get_theme() == 'light' else 'Dark' }}</span>
+                </button>
+                <a href="/status" target="_blank" class="text-orange-800 hover:text-green-400 transition text-sm" title="Status"><i class="fas fa-heart-pulse"></i></a>
+            </div>
+            <a href="/profile" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-orange-500/5 transition">
+                <div class="w-8 h-8 rounded-lg lava-logo flex items-center justify-center text-xs font-bold text-white lava-logo-ring">{{ current_user.username[0]|upper }}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-orange-100 truncate">{{ current_user.username }}</p>
+                    <p class="text-xs text-orange-700">{{ current_user.role|title }}</p>
+                </div>
+                <a href="/logout" class="text-orange-900 hover:text-red-400 transition" title="Logout"><i class="fas fa-right-from-bracket"></i></a>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Mobile topbar -->
+    <div class="lg:hidden fixed top-0 left-0 right-0 z-50 card-glass px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleMobileMenu()" class="text-orange-400 hover:text-orange-300"><i class="fas fa-bars text-lg"></i></button>
+                <div class="flex items-center space-x-2">
+                    <div class="lava-logo w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs">🌋</div>
+                    <span class="font-black text-sm tracking-tight">{{ settings_get('site_name', 'lavadev') }}</span>
+                </div>
+            </div>
+            <a href="/logout" class="text-orange-700 hover:text-red-400"><i class="fas fa-right-from-bracket"></i></a>
         </div>
     </div>
 
-    {% if current_user %}
-    <script>
-    function toggleMobileMenu(){document.getElementById('mobileMenu').classList.toggle('hidden')}
-    function toggleTheme(){fetch('/api/theme',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'theme='+(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')}).then(r=>r.json()).then(d=>{if(d.success){document.documentElement.setAttribute('data-theme',d.theme);const icon=document.getElementById('themeIcon');if(icon){icon.className='fas '+(d.theme==='light'?'fa-sun':'fa-moon')}const label=icon?.nextElementSibling;if(label)label.textContent=d.theme==='light'?'Light':'Dark'}})}
-    </script>
-    {% endif %}
+    <!-- Mobile drawer -->
+    <div id="mobileMenu" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-72 bg-[#0f0b14] p-5 overflow-y-auto border-r border-orange-900/20">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="lava-logo w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-lg">🌋</div>
+                    <span class="font-black text-lg text-white">{{ settings_get('site_name', 'lavadev') }}</span>
+                </div>
+                <button onclick="toggleMobileMenu()" class="text-orange-700 hover:text-white"><i class="fas fa-xmark text-xl"></i></button>
+            </div>
+            <nav class="space-y-0.5">
+                <a href="/dashboard" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-th-large w-5"></i><span>Dashboard</span></a>
+                {% if current_user.role in ['admin', 'reseller'] %}<a href="/vms" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-server w-5"></i><span>VMs</span></a>{% endif %}
+                {% if current_user.role == 'client' %}<a href="/my-vms" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-server w-5"></i><span>My VMs</span></a>{% endif %}
+                <a href="/plans" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-box w-5"></i><span>Plans</span></a>
+                <a href="/users" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-users w-5"></i><span>Users</span></a>
+                {% if current_user.role == 'admin' %}<a href="/resellers" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-user-tie w-5"></i><span>Resellers</span></a>{% endif %}
+                {% if current_user.role == 'admin' %}<a href="/nodes" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-network-wired w-5"></i><span>Nodes</span></a>{% endif %}
+                <a href="/invoices" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-file-invoice-dollar w-5"></i><span>Invoices</span></a>
+                <a href="/tickets" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-ticket w-5"></i><span>Tickets</span></a>
+                <a href="/activity" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-clock-rotate w-5"></i><span>Activity</span></a>
+                <div class="pt-4 mt-4 border-t border-orange-900/20">
+                    <a href="/profile" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-orange-700 hover:text-white hover:bg-orange-500/10 text-sm"><i class="fas fa-user-gear w-5"></i><span>Profile</span></a>
+                </div>
+            </nav>
+        </div>
+    </div>
 
-    <script>
-    function showToast(message, type) {
-        const colors={success:'#10b981',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
-        const icons={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info',warning:'fa-triangle-exclamation'};
-        const toast=document.createElement('div');
-        toast.style.cssText='position:fixed;bottom:24px;right:24px;padding:16px 24px;border-radius:12px;color:white;font-weight:500;z-index:9999;background:'+(colors[type]||'#333')+';box-shadow:0 16px 48px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;display:flex;align-items:center;gap:10px;font-size:14px;max-width:400px;';
-        toast.innerHTML='<i class="fas '+(icons[type]||'fa-bell')+'"></i>'+message;
-        document.body.appendChild(toast);
-        setTimeout(()=>{toast.style.opacity='0';toast.style.transition='opacity 0.3s';setTimeout(()=>toast.remove(),300)},3000);
-    }
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}{% for category, message in messages %}
-    showToast('{{ message|e }}', '{{ category }}');
-    {% endfor %}{% endif %}
-    {% endwith %}
-    </script>
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col overflow-hidden {{ 'pt-14 lg:pt-0' if current_user else '' }}">
+        <main class="flex-1 overflow-y-auto p-4 lg:p-8">
+            {% block content %}{% endblock %}
+        </main>
+        {% if current_user and settings_get('branding_show', '1') != '0' %}
+        <div class="text-center py-3 text-xs text-orange-900/50 border-t border-orange-900/20">
+            {{ settings_get('footer_text', 'Powered by lavadev · Hosting Infrastructure Platform') }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if current_user %}
+<script>
+function toggleMobileMenu(){document.getElementById('mobileMenu').classList.toggle('hidden')}
+function toggleTheme(){fetch('/api/theme',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'theme='+(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')}).then(r=>r.json()).then(d=>{if(d.success){document.documentElement.setAttribute('data-theme',d.theme);const icon=document.getElementById('themeIcon');if(icon)icon.className='fas '+(d.theme==='light'?'fa-sun':'fa-moon');const label=icon?.nextElementSibling;if(label)label.textContent=d.theme==='light'?'Light':'Dark'}})}
+</script>
+{% endif %}
+
+<script>
+function showToast(message,type){
+    const colors={success:'linear-gradient(135deg,#059669,#10b981)',error:'linear-gradient(135deg,#dc2626,#ef4444)',info:'linear-gradient(135deg,#f97316,#ef4444)',warning:'linear-gradient(135deg,#d97706,#f59e0b)'};
+    const icons={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info',warning:'fa-triangle-exclamation'};
+    const toast=document.createElement('div');
+    toast.style.cssText='position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:12px;color:white;font-weight:500;z-index:9999;background:'+(colors[type]||'#333')+';box-shadow:0 16px 48px rgba(0,0,0,0.5);animation:slideIn 0.3s ease;display:flex;align-items:center;gap:10px;font-size:14px;max-width:400px;';
+    toast.innerHTML='<i class="fas '+(icons[type]||'fa-bell')+'"></i>'+message;
+    document.body.appendChild(toast);
+    setTimeout(()=>{toast.style.opacity='0';toast.style.transition='opacity 0.3s';setTimeout(()=>toast.remove(),300)},3500);
+}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for category, message in messages %}
+showToast('{{ message|e }}','{{ category }}');
+{% endfor %}{% endif %}
+{% endwith %}
+</script>
 </body>
 </html>
