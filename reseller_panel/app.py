@@ -1412,6 +1412,13 @@ def _start_vm_internal(uuid, conn=None):
         with open(ws_log, 'w') as wsf:
             subprocess.Popen(['websockify', str(ws_port), f'127.0.0.1:{vnc_port}'],
                            stdout=wsf, stderr=wsf)
+        time.sleep(0.5)
+        ws_check = subprocess.run(['pgrep', '-af', f'websockify.*{ws_port}'], capture_output=True, text=True, timeout=5)
+        if not ws_check.stdout.strip():
+            with open(ws_log, 'w') as wsf:
+                subprocess.Popen(['websockify', str(ws_port), f'127.0.0.1:{vnc_port}'],
+                               stdout=wsf, stderr=wsf)
+            time.sleep(0.5)
         conn.execute("UPDATE vms SET status='running',vnc_port=?,ws_port=?,started_at=CURRENT_TIMESTAMP WHERE uuid=?", (vnc_port, ws_port, uuid))
         conn.commit()
         try:
@@ -3435,6 +3442,13 @@ def auto_detect_loop():
                     subprocess.run(['pkill', '-f', f'websockify.*{vm["ws_port"]}'], capture_output=True, timeout=10)
                     conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (vm['uuid'],))
                     log_activity(None, f'auto-detected stopped VM: {vm["uuid"]}')
+                elif vm['ws_port']:
+                    ws_check = subprocess.run(['pgrep', '-af', f'websockify.*{vm["ws_port"]}'], capture_output=True, text=True, timeout=5)
+                    if not ws_check.stdout.strip():
+                        ws_log = os.path.join(VM_DIR, f'{vm["uuid"]}-ws.log')
+                        with open(ws_log, 'w') as wsf:
+                            subprocess.Popen(['websockify', str(vm['ws_port']), f'127.0.0.1:{vm["vnc_port"]}'],
+                                           stdout=wsf, stderr=wsf)
             # Also detect orphaned QEMU processes without running VMs
             running_uuids = {vm['uuid'] for vm in stale if is_vm_running(vm['uuid'])}
             pgrep = subprocess.run(['pgrep', '-af', 'vpanel-'], capture_output=True, text=True, timeout=5)
