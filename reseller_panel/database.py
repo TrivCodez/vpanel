@@ -238,14 +238,6 @@ def init_db():
         conn.execute("ALTER TABLE vms ADD COLUMN expiry_protection INTEGER DEFAULT 1")
     except sqlite3.OperationalError:
         pass
-    try:
-        conn.execute("ALTER TABLE vms ADD COLUMN serial_port INTEGER")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        conn.execute("ALTER TABLE vms ADD COLUMN ws_serial_port INTEGER")
-    except sqlite3.OperationalError:
-        pass
     conn.executescript("""
     CREATE TABLE IF NOT EXISTS firewall_rules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

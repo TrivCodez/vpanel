@@ -429,136 +429,6 @@ def vnc_viewer(uuid):
     return render_template_string(template, title=f'Console - {vm["name"]}', current_user=user, vm=vm, host=host)
 
 
-@app.route('/terminal/<uuid>')
-@login_required
-def terminal_view(uuid):
-    user = get_current_user()
-    conn = get_db()
-    if user['role'] == 'admin':
-        row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
-    elif user['role'] == 'reseller':
-        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id IN (SELECT id FROM users WHERE parent_id=?)", (uuid, user['id'])).fetchone()
-    else:
-        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id=?", (uuid, user['id'])).fetchone()
-    conn.close()
-    if not row:
-        return "VM not found", 404
-    vm = dict(row)
-    vm['running'] = is_vm_running(uuid)
-    vm['status'] = 'running' if vm['running'] else 'stopped'
-    template = open(Path(__file__).parent / 'templates' / 'terminal.html').read()
-    return render_template_string(template, title=f'Terminal - {vm["name"]}', current_user=user, vm=vm)
-
-
-@app.route('/serial/<uuid>')
-@login_required
-def serial_view(uuid):
-    user = get_current_user()
-    conn = get_db()
-    if user['role'] == 'admin':
-        row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
-    elif user['role'] == 'reseller':
-        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id IN (SELECT id FROM users WHERE parent_id=?)", (uuid, user['id'])).fetchone()
-    else:
-        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id=?", (uuid, user['id'])).fetchone()
-    conn.close()
-    if not row:
-        return "VM not found", 404
-    vm = dict(row)
-    vm['running'] = is_vm_running(uuid)
-    vm['status'] = 'running' if vm['running'] else 'stopped'
-    host = request.host.split(':')[0]
-    template = open(Path(__file__).parent / 'templates' / 'serial.html').read()
-    return render_template_string(template, title=f'Serial Console - {vm["name"]}', current_user=user, vm=vm, host=host)
-
-
-@sock.route('/ssh/<uuid>')
-def ssh_websocket(ws, uuid):
-    user = get_current_user()
-    if not user:
-        ws.close()
-        return
-    conn = get_db()
-    if user['role'] == 'admin':
-        row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
-    elif user['role'] == 'reseller':
-        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id IN (SELECT id FROM users WHERE parent_id=?)", (uuid, user['id'])).fetchone()
-    else:
-        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id=?", (uuid, user['id'])).fetchone()
-    conn.close()
-    if not row:
-        ws.close()
-        return
-    vm = dict(row)
-    ssh_port = vm['ssh_port'] or 22
-    username = vm['username'] or 'root'
-    password = vm['password'] or ''
-    import pty
-    master_fd, slave_fd = pty.openpty()
-    proc = subprocess.Popen([
-        'sshpass', '-p', password,
-        'ssh', '-o', 'StrictHostKeyChecking=no',
-        '-o', 'UserKnownHostsFile=/dev/null',
-        '-p', str(ssh_port),
-        f'{username}@localhost',
-        '-t', 'bash --login'
-    ], stdin=slave_fd, stdout=slave_fd, stderr=slave_fd, close_fds=True)
-    os.close(slave_fd)
-    import select
-    running = True
-    def reader():
-        nonlocal running
-        while running:
-            try:
-                r, _, _ = select.select([master_fd], [], [], 0.1)
-                if r:
-                    data = os.read(master_fd, 4096)
-                    if not data:
-                        break
-                    ws.send(data)
-            except (OSError, ValueError):
-                break
-            except Exception:
-                break
-    thread = threading.Thread(target=reader, daemon=True)
-    thread.start()
-    try:
-        while running:
-            try:
-                message = ws.receive()
-                if message is None:
-                    break
-                if isinstance(message, bytes):
-                    os.write(master_fd, message)
-                elif isinstance(message, str):
-                    try:
-                        msg = json.loads(message)
-                        if 'resize' in msg:
-                            import fcntl
-                            import struct
-                            import termios
-                            cols, rows = msg['resize']
-                            fcntl.ioctl(master_fd, termios.TIOCSWINSZ,
-                                        struct.pack('HHHH', rows, cols, 0, 0))
-                            continue
-                    except (json.JSONDecodeError, ValueError):
-                        pass
-                    os.write(master_fd, message.encode())
-            except Exception:
-                break
-    finally:
-        running = False
-        try:
-            os.close(master_fd)
-        except OSError:
-            pass
-        proc.terminate()
-        try:
-            proc.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-
-
 @app.route('/api/vm/<uuid>/upgrade', methods=['POST'])
 @login_required
 def api_upgrade_vm(uuid):
@@ -1486,21 +1356,18 @@ def _start_vm_internal(uuid, conn=None):
             return False
         vnc_port = get_available_port()
         ws_port = get_available_port(vnc_port + 1)
-        serial_port = get_available_port(ws_port + 1)
-        ws_serial_port = get_available_port(serial_port + 1)
         cpu_string = CPU_MODELS.get(vm['cpu_model'], 'host')
         kvm = check_kvm()
         cmd = ['qemu-system-x86_64', '-name', f'vpanel-{uuid}',
                '-machine', 'type=q35,accel=kvm' if kvm else 'type=q35',
                '-cpu', cpu_string, '-smp', str(vm['cpus']), '-m', str(vm['ram']),
                '-drive', f'file={vm["img_file"]},format=qcow2,if=virtio',
-               '-drive', f'file={vm["seed_file"]},format=raw,if=virtio',
+               '-drive', f'file={vm["seed_file"]},format=qcow2,if=virtio',
                '-netdev', f'user,id=net0,hostfwd=tcp::{vm["ssh_port"]}-:22',
                '-device', 'virtio-net-pci,netdev=net0',
                '-vnc', f':{vnc_port - 5900}', '-vga', 'virtio', '-display', 'none',
                '-usb', '-device', 'usb-tablet', '-k', 'en-us',
-               '-rtc', 'base=localtime,clock=host', '-msg', 'timestamp=on',
-               '-serial', f'tcp:127.0.0.1:{serial_port},server,nowait']
+               '-rtc', 'base=localtime,clock=host', '-msg', 'timestamp=on']
         iso_mount = conn.execute("SELECT iso_path FROM iso_mounts WHERE vm_uuid=? AND mounted=1 ORDER BY id DESC LIMIT 1", (uuid,)).fetchone()
         if iso_mount and os.path.exists(iso_mount['iso_path']):
             cmd.extend(['-cdrom', iso_mount['iso_path']])
@@ -1511,9 +1378,7 @@ def _start_vm_internal(uuid, conn=None):
         with open(ws_log, 'w') as wsf:
             subprocess.Popen(['websockify', str(ws_port), f'127.0.0.1:{vnc_port}'],
                            stdout=wsf, stderr=wsf)
-            subprocess.Popen(['websockify', str(ws_serial_port), f'127.0.0.1:{serial_port}'],
-                           stdout=wsf, stderr=wsf)
-        conn.execute("UPDATE vms SET status='running',vnc_port=?,ws_port=?,serial_port=?,ws_serial_port=?,started_at=CURRENT_TIMESTAMP WHERE uuid=?", (vnc_port, ws_port, serial_port, ws_serial_port, uuid))
+        conn.execute("UPDATE vms SET status='running',vnc_port=?,ws_port=?,started_at=CURRENT_TIMESTAMP WHERE uuid=?", (vnc_port, ws_port, uuid))
         conn.commit()
         try:
             apply_firewall(uuid)
@@ -1560,9 +1425,8 @@ def api_control_vm(uuid, action):
     elif action == 'stop':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(1)
-        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
+        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
         conn.commit()
         conn.close()
         log_activity(user['id'], f'stopped VM: {vm["name"]}')
@@ -1571,7 +1435,6 @@ def api_control_vm(uuid, action):
     elif action == 'restart':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(2)
         conn.close()
         return api_control_vm(uuid, 'start')
@@ -1579,7 +1442,6 @@ def api_control_vm(uuid, action):
     elif action == 'delete':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(1)
         for f in [vm.get('img_file'), vm.get('seed_file')]:
             if f and os.path.exists(f):
@@ -1599,16 +1461,15 @@ def api_control_vm(uuid, action):
     elif action == 'suspend':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(1)
-        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL,suspended=1 WHERE uuid=?", (uuid,))
+        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,suspended=1 WHERE uuid=?", (uuid,))
         conn.commit()
         conn.close()
         log_activity(user['id'], f'suspended VM: {vm["name"]}')
         return jsonify({'success': True, 'message': 'VM suspended'})
 
     elif action == 'unsuspend':
-        conn.execute("UPDATE vms SET suspended=0,vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
+        conn.execute("UPDATE vms SET suspended=0,vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
         conn.commit()
         conn.close()
         log_activity(user['id'], f'unsuspended VM: {vm["name"]}')
@@ -1878,9 +1739,8 @@ def api_force_reboot(uuid):
     vm = dict(row)
     subprocess.run(['pkill', '-9', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
     subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-    subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
     time.sleep(2)
-    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
+    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
     conn.commit()
     conn.close()
     time.sleep(1)
@@ -1904,8 +1764,7 @@ def api_force_shutdown(uuid):
     vm = dict(row)
     subprocess.run(['pkill', '-9', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
     subprocess.run(['pkill', '-9', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-    subprocess.run(['pkill', '-9', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
-    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
+    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
     conn.commit()
     conn.close()
     log_activity(user['id'], f'force shutdown VM {uuid}')
@@ -2560,22 +2419,20 @@ def api_vm_mass():
                     log_activity(user['id'], f'[mass] started VM: {vm["name"]}')
             elif action == 'stop':
                 subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
-                vm_row = conn.execute("SELECT ws_port, ws_serial_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
+                vm_row = conn.execute("SELECT ws_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if vm_row:
                     subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_port"]}'], capture_output=True, timeout=10)
-                    subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_serial_port"]}'], capture_output=True, timeout=10)
                 time.sleep(1)
-                conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
+                conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
                 conn.commit()
                 results.append({'uuid': uuid, 'success': True, 'error': None})
                 if vm_row:
                     log_activity(user['id'], f'[mass] stopped VM: {vm_row["name"]}')
             elif action == 'restart':
                 subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
-                vm_row = conn.execute("SELECT ws_port, ws_serial_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
+                vm_row = conn.execute("SELECT ws_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if vm_row:
                     subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_port"]}'], capture_output=True, timeout=10)
-                    subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_serial_port"]}'], capture_output=True, timeout=10)
                 time.sleep(2)
                 row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if not row:
@@ -2591,10 +2448,9 @@ def api_vm_mass():
                     log_activity(user['id'], f'[mass] restarted VM: {vm["name"]}')
             elif action == 'delete':
                 subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
-                vm_row = conn.execute("SELECT img_file, seed_file, ws_port, ws_serial_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
+                vm_row = conn.execute("SELECT img_file, seed_file, ws_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if vm_row:
                     subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_port"]}'], capture_output=True, timeout=10)
-                    subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_serial_port"]}'], capture_output=True, timeout=10)
                 time.sleep(1)
                 if vm_row:
                     for f in [vm_row['img_file'], vm_row['seed_file']]:
@@ -2781,11 +2637,89 @@ def api_delete_snapshot(uuid, sid):
         return jsonify({'success': False, 'error': str(e)})
 
 
-# ========== API: REBUILD ==========
+# ========== API: CLOUD-INIT ==========
+
+@app.route('/api/vm/<uuid>/cloud-init', methods=['POST'])
+@login_required
+def api_cloud_init(uuid):
+    user = get_current_user()
+    conn = get_db()
+    if user['role'] == 'admin':
+        row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
+    elif user['role'] == 'reseller':
+        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id IN (SELECT id FROM users WHERE parent_id=?)", (uuid, user['id'])).fetchone()
+    else:
+        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id=?", (uuid, user['id'])).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'success': False, 'error': 'VM not found'}), 404
+    vm = dict(row)
+    username = request.form.get('username', vm.get('username', 'root'))
+    password = request.form.get('password', vm.get('password', ''))
+    hostname = request.form.get('hostname', vm.get('hostname', 'vm'))
+    ssh_keys_text = request.form.get('ssh_keys', '').strip()
+    subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
+    subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
+    time.sleep(1)
+    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,username=?,password=?,hostname=? WHERE uuid=?",
+                 (username, password, hostname, uuid))
+    conn.commit()
+    conn.close()
+    seed_file = vm['seed_file']
+    if seed_file and os.path.exists(seed_file):
+        os.remove(seed_file)
+    instance_id = f"{uuid}-{int(time.time())}"
+    ssh_key_lines = ''
+    if ssh_keys_text:
+        for line in ssh_keys_text.split('\n'):
+            line = line.strip()
+            if line and not line.startswith('#'):
+                ssh_key_lines += f'      - "{line}"\n'
+    user_data = f"""#cloud-config
+hostname: {hostname}
+manage_etc_hosts: true
+users:
+  - name: {username}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: false
+    ssh_authorized_keys:
+{ssh_key_lines}  - name: root
+    ssh_authorized_keys:
+{ssh_key_lines}chpasswd:
+  list: |
+    {username}:{password}
+    root:{password}
+  expire: false
+ssh_pwauth: true
+disable_root: false
+package_update: false
+runcmd:
+  - sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+  - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+  - systemctl restart sshd || systemctl restart ssh
+"""
+    meta_data = f"""instance-id: {instance_id}
+local-hostname: {hostname}
+"""
+    try:
+        with open('/tmp/seed-user-data', 'w') as f:
+            f.write(user_data)
+        with open('/tmp/seed-meta-data', 'w') as f:
+            f.write(meta_data)
+        subprocess.run(['cloud-localds', seed_file, '/tmp/seed-user-data', '/tmp/seed-meta-data'],
+                      check=True, capture_output=True, timeout=30)
+        os.remove('/tmp/seed-user-data')
+        os.remove('/tmp/seed-meta-data')
+        return jsonify({'success': True, 'message': 'Cloud-init regenerated. Start the VM for changes to take effect.'})
+    except subprocess.CalledProcessError as e:
+        return jsonify({'success': False, 'error': f'Failed to generate seed: {e.stderr.decode() if e.stderr else str(e)}'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 
 @app.route('/api/vm/<uuid>/rebuild', methods=['POST'])
 @login_required
-@role_required('admin', 'reseller')
 def api_rebuild_vm(uuid):
     user = get_current_user()
     conn = get_db()
@@ -3539,12 +3473,11 @@ def auto_detect_loop():
         try:
             conn = get_db()
             # Fix VMs marked running but no QEMU process
-            stale = conn.execute("SELECT uuid, vnc_port, ws_port, ws_serial_port FROM vms WHERE status='running'").fetchall()
+            stale = conn.execute("SELECT uuid, vnc_port, ws_port FROM vms WHERE status='running'").fetchall()
             for vm in stale:
                 if not is_vm_running(vm['uuid']):
                     subprocess.run(['pkill', '-f', f'websockify.*{vm["ws_port"]}'], capture_output=True, timeout=10)
-                    subprocess.run(['pkill', '-f', f'websockify.*{vm["ws_serial_port"]}'], capture_output=True, timeout=10)
-                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (vm['uuid'],))
+                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (vm['uuid'],))
                     log_activity(None, f'auto-detected stopped VM: {vm["uuid"]}')
             # Also detect orphaned QEMU processes without running VMs
             running_uuids = {vm['uuid'] for vm in stale if is_vm_running(vm['uuid'])}
@@ -3554,7 +3487,7 @@ def auto_detect_loop():
                 m = __import__('re').search(r'vpanel-([a-f0-9-]+)', line)
                 if m and m.group(1) not in running_uuids:
                     subprocess.run(['pkill', '-f', f'websockify.*{m.group(1)}'], capture_output=True, timeout=10)
-                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (m.group(1),))
+                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (m.group(1),))
             conn.commit()
             conn.close()
         except Exception:
