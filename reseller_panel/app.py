@@ -450,6 +450,28 @@ def terminal_view(uuid):
     return render_template_string(template, title=f'Terminal - {vm["name"]}', current_user=user, vm=vm)
 
 
+@app.route('/serial/<uuid>')
+@login_required
+def serial_view(uuid):
+    user = get_current_user()
+    conn = get_db()
+    if user['role'] == 'admin':
+        row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
+    elif user['role'] == 'reseller':
+        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id IN (SELECT id FROM users WHERE parent_id=?)", (uuid, user['id'])).fetchone()
+    else:
+        row = conn.execute("SELECT * FROM vms WHERE uuid=? AND user_id=?", (uuid, user['id'])).fetchone()
+    conn.close()
+    if not row:
+        return "VM not found", 404
+    vm = dict(row)
+    vm['running'] = is_vm_running(uuid)
+    vm['status'] = 'running' if vm['running'] else 'stopped'
+    host = request.host.split(':')[0]
+    template = open(Path(__file__).parent / 'templates' / 'serial.html').read()
+    return render_template_string(template, title=f'Serial Console - {vm["name"]}', current_user=user, vm=vm, host=host)
+
+
 @sock.route('/ssh/<uuid>')
 def ssh_websocket(ws, uuid):
     user = get_current_user()
@@ -1464,6 +1486,8 @@ def _start_vm_internal(uuid, conn=None):
             return False
         vnc_port = get_available_port()
         ws_port = get_available_port(vnc_port + 1)
+        serial_port = get_available_port(ws_port + 1)
+        ws_serial_port = get_available_port(serial_port + 1)
         cpu_string = CPU_MODELS.get(vm['cpu_model'], 'host')
         kvm = check_kvm()
         cmd = ['qemu-system-x86_64', '-name', f'vpanel-{uuid}',
@@ -1475,7 +1499,8 @@ def _start_vm_internal(uuid, conn=None):
                '-device', 'virtio-net-pci,netdev=net0',
                '-vnc', f':{vnc_port - 5900}', '-vga', 'virtio', '-display', 'none',
                '-usb', '-device', 'usb-tablet', '-k', 'en-us',
-               '-rtc', 'base=localtime,clock=host', '-msg', 'timestamp=on']
+               '-rtc', 'base=localtime,clock=host', '-msg', 'timestamp=on',
+               '-serial', f'tcp:127.0.0.1:{serial_port},server,nowait']
         iso_mount = conn.execute("SELECT iso_path FROM iso_mounts WHERE vm_uuid=? AND mounted=1 ORDER BY id DESC LIMIT 1", (uuid,)).fetchone()
         if iso_mount and os.path.exists(iso_mount['iso_path']):
             cmd.extend(['-cdrom', iso_mount['iso_path']])
@@ -1486,7 +1511,9 @@ def _start_vm_internal(uuid, conn=None):
         with open(ws_log, 'w') as wsf:
             subprocess.Popen(['websockify', str(ws_port), f'127.0.0.1:{vnc_port}'],
                            stdout=wsf, stderr=wsf)
-        conn.execute("UPDATE vms SET status='running',vnc_port=?,ws_port=?,started_at=CURRENT_TIMESTAMP WHERE uuid=?", (vnc_port, ws_port, uuid))
+            subprocess.Popen(['websockify', str(ws_serial_port), f'127.0.0.1:{serial_port}'],
+                           stdout=wsf, stderr=wsf)
+        conn.execute("UPDATE vms SET status='running',vnc_port=?,ws_port=?,serial_port=?,ws_serial_port=?,started_at=CURRENT_TIMESTAMP WHERE uuid=?", (vnc_port, ws_port, serial_port, ws_serial_port, uuid))
         conn.commit()
         try:
             apply_firewall(uuid)
@@ -1533,8 +1560,9 @@ def api_control_vm(uuid, action):
     elif action == 'stop':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
+        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(1)
-        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
+        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
         conn.commit()
         conn.close()
         log_activity(user['id'], f'stopped VM: {vm["name"]}')
@@ -1543,6 +1571,7 @@ def api_control_vm(uuid, action):
     elif action == 'restart':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
+        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(2)
         conn.close()
         return api_control_vm(uuid, 'start')
@@ -1550,6 +1579,7 @@ def api_control_vm(uuid, action):
     elif action == 'delete':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
+        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(1)
         for f in [vm.get('img_file'), vm.get('seed_file')]:
             if f and os.path.exists(f):
@@ -1569,15 +1599,16 @@ def api_control_vm(uuid, action):
     elif action == 'suspend':
         subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
         subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
+        subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
         time.sleep(1)
-        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,suspended=1 WHERE uuid=?", (uuid,))
+        conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL,suspended=1 WHERE uuid=?", (uuid,))
         conn.commit()
         conn.close()
         log_activity(user['id'], f'suspended VM: {vm["name"]}')
         return jsonify({'success': True, 'message': 'VM suspended'})
 
     elif action == 'unsuspend':
-        conn.execute("UPDATE vms SET suspended=0,vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
+        conn.execute("UPDATE vms SET suspended=0,vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
         conn.commit()
         conn.close()
         log_activity(user['id'], f'unsuspended VM: {vm["name"]}')
@@ -1847,8 +1878,9 @@ def api_force_reboot(uuid):
     vm = dict(row)
     subprocess.run(['pkill', '-9', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
     subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
+    subprocess.run(['pkill', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
     time.sleep(2)
-    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
+    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
     conn.commit()
     conn.close()
     time.sleep(1)
@@ -1872,7 +1904,8 @@ def api_force_shutdown(uuid):
     vm = dict(row)
     subprocess.run(['pkill', '-9', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
     subprocess.run(['pkill', '-9', '-f', f'websockify.*{vm.get("ws_port", "")}'], capture_output=True, timeout=10)
-    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
+    subprocess.run(['pkill', '-9', '-f', f'websockify.*{vm.get("ws_serial_port", "")}'], capture_output=True, timeout=10)
+    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
     conn.commit()
     conn.close()
     log_activity(user['id'], f'force shutdown VM {uuid}')
@@ -2527,20 +2560,22 @@ def api_vm_mass():
                     log_activity(user['id'], f'[mass] started VM: {vm["name"]}')
             elif action == 'stop':
                 subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
-                vm_row = conn.execute("SELECT ws_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
+                vm_row = conn.execute("SELECT ws_port, ws_serial_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if vm_row:
                     subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_port"]}'], capture_output=True, timeout=10)
+                    subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_serial_port"]}'], capture_output=True, timeout=10)
                 time.sleep(1)
-                conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (uuid,))
+                conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (uuid,))
                 conn.commit()
                 results.append({'uuid': uuid, 'success': True, 'error': None})
                 if vm_row:
                     log_activity(user['id'], f'[mass] stopped VM: {vm_row["name"]}')
             elif action == 'restart':
                 subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
-                vm_row = conn.execute("SELECT ws_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
+                vm_row = conn.execute("SELECT ws_port, ws_serial_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if vm_row:
                     subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_port"]}'], capture_output=True, timeout=10)
+                    subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_serial_port"]}'], capture_output=True, timeout=10)
                 time.sleep(2)
                 row = conn.execute("SELECT * FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if not row:
@@ -2556,9 +2591,10 @@ def api_vm_mass():
                     log_activity(user['id'], f'[mass] restarted VM: {vm["name"]}')
             elif action == 'delete':
                 subprocess.run(['pkill', '-f', f'vpanel-{uuid}'], capture_output=True, timeout=10)
-                vm_row = conn.execute("SELECT img_file, seed_file, ws_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
+                vm_row = conn.execute("SELECT img_file, seed_file, ws_port, ws_serial_port, name FROM vms WHERE uuid=?", (uuid,)).fetchone()
                 if vm_row:
                     subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_port"]}'], capture_output=True, timeout=10)
+                    subprocess.run(['pkill', '-f', f'websockify.*{vm_row["ws_serial_port"]}'], capture_output=True, timeout=10)
                 time.sleep(1)
                 if vm_row:
                     for f in [vm_row['img_file'], vm_row['seed_file']]:
@@ -3503,11 +3539,12 @@ def auto_detect_loop():
         try:
             conn = get_db()
             # Fix VMs marked running but no QEMU process
-            stale = conn.execute("SELECT uuid, vnc_port, ws_port FROM vms WHERE status='running'").fetchall()
+            stale = conn.execute("SELECT uuid, vnc_port, ws_port, ws_serial_port FROM vms WHERE status='running'").fetchall()
             for vm in stale:
                 if not is_vm_running(vm['uuid']):
                     subprocess.run(['pkill', '-f', f'websockify.*{vm["ws_port"]}'], capture_output=True, timeout=10)
-                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (vm['uuid'],))
+                    subprocess.run(['pkill', '-f', f'websockify.*{vm["ws_serial_port"]}'], capture_output=True, timeout=10)
+                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (vm['uuid'],))
                     log_activity(None, f'auto-detected stopped VM: {vm["uuid"]}')
             # Also detect orphaned QEMU processes without running VMs
             running_uuids = {vm['uuid'] for vm in stale if is_vm_running(vm['uuid'])}
@@ -3517,7 +3554,7 @@ def auto_detect_loop():
                 m = __import__('re').search(r'vpanel-([a-f0-9-]+)', line)
                 if m and m.group(1) not in running_uuids:
                     subprocess.run(['pkill', '-f', f'websockify.*{m.group(1)}'], capture_output=True, timeout=10)
-                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (m.group(1),))
+                    conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL,serial_port=NULL,ws_serial_port=NULL WHERE uuid=?", (m.group(1),))
             conn.commit()
             conn.close()
         except Exception:
