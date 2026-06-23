@@ -1444,21 +1444,22 @@ def _start_vm_internal(uuid, conn=None):
         cmd = ['qemu-system-x86_64', '-name', f'vpanel-{uuid}',
                '-machine', machine_opts,
                '-cpu', cpu_string, '-smp', str(vm['cpus']), '-m', str(vm['ram']),
-               # Fast disk I/O with writeback cache and io_uring when available
+               # Fast disk I/O
                '-drive', f'file={vm["img_file"]},format=qcow2,if=virtio,cache=writeback,aio=threads',
                '-drive', f'file={vm["seed_file"]},format=raw,if=virtio,cache=unsafe',
-               # Network with virtio for speed
+               # Network
                '-netdev', f'user,id=net0,hostfwd=tcp::{vm["ssh_port"]}-:22',
                '-device', 'virtio-net-pci,netdev=net0',
-               # VNC + display
+               # VNC display
                '-vnc', f':{vnc_port - 5900}', '-vga', 'virtio', '-display', 'none',
-               '-usb', '-device', 'usb-tablet', '-k', 'en-us',
-               # Fast boot: skip BIOS splash/delay, boot straight from disk
+               # USB tablet for accurate mouse tracking (needs explicit controller on q35)
+               '-device', 'qemu-xhci,id=usb', '-device', 'usb-tablet,bus=usb.0',
+               '-k', 'en-us',
+               # Skip BIOS splash/menu entirely
                '-boot', 'order=c,menu=off,splash-time=0',
                '-no-fd-bootchk',
+               '-no-user-config',
                '-rtc', 'base=localtime,clock=host',
-               # Reduce QEMU overhead
-               '-no-user-config', '-nodefaults',
                '-device', 'virtio-balloon',
                '-msg', 'timestamp=on']
         iso_mount = conn.execute("SELECT iso_path FROM iso_mounts WHERE vm_uuid=? AND mounted=1 ORDER BY id DESC LIMIT 1", (uuid,)).fetchone()

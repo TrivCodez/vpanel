@@ -189,6 +189,28 @@ const WS_HOST = '{{ host }}';
 const UUID = '{{ vm.uuid }}';
 const PASSWORD = '{{ vm.password }}';
 const VM_NAME = '{{ vm.name }}';
+
+// Guard: if ws_port is missing the VM was started before this version — show actionable error
+if (!WS_PORT) {
+    const ov = document.getElementById('novncOverlay');
+    const st = document.getElementById('connStatus');
+    if (ov) ov.innerHTML = `
+        <div class="text-center px-8">
+            <div class="text-4xl mb-3 text-yellow-400"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="text-gray-300 text-sm font-semibold mb-2">Console port not assigned</div>
+            <div class="text-gray-500 text-xs mb-4">This VM was started before the WebSocket proxy was configured.<br>Stop and restart the VM to get a console port.</div>
+            <button onclick="stopThenStart()" class="btn-primary px-5 py-2 rounded-xl text-sm">Stop &amp; Restart VM</button>
+        </div>`;
+    if (st) { st.textContent = 'No console port'; st.className = 'text-xs text-yellow-400 flex items-center gap-1.5 shrink-0'; }
+}
+window.stopThenStart = function() {
+    fetch(`/api/vm/${UUID}/stop`,{method:'POST'}).then(()=>{
+        setTimeout(()=>fetch(`/api/vm/${UUID}/start`,{method:'POST'}).then(()=>setTimeout(()=>location.reload(),2000)),1500);
+    });
+};
+const UUID = '{{ vm.uuid }}';
+const PASSWORD = '{{ vm.password }}';
+const VM_NAME = '{{ vm.name }}';
 const CONTAINER = document.getElementById('novncContainer');
 const OVERLAY = document.getElementById('novncOverlay');
 const STATUS = document.getElementById('connStatus');
@@ -280,7 +302,8 @@ function connect() {
     if (DESKTOP_NAME) DESKTOP_NAME.textContent = '';
     setPowerBtnsDisabled(true);
 
-    const url = `ws://${WS_HOST}:${WS_PORT}/`;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${proto}://${WS_HOST}:${WS_PORT}/`;
     try {
         rfb = new RFB(CONTAINER, url, {
             credentials: { password: PASSWORD || '' },
@@ -552,10 +575,8 @@ document.addEventListener('click', (e) => {
 });
 
 // Auto-connect on load
-{% if vm.running %}
 if (WS_PORT && WS_HOST) {
     connect();
 }
-{% endif %}
 </script>
 {% endblock %}
