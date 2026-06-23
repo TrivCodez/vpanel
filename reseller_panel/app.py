@@ -952,12 +952,26 @@ def login_2fa():
 
 @app.route('/novnc/<path:filename>')
 def novnc_static(filename):
-    novnc_dir = '/usr/share/novnc'
-    filepath = os.path.normpath(os.path.join(novnc_dir, filename))
-    if not filepath.startswith(os.path.normpath(novnc_dir)):
-        return "Forbidden", 403
-    if not os.path.isfile(filepath):
-        return "Not found", 404
+    # noVNC is installed by vms.sh into VM_DIR/novnc (e.g. ~/vms/novnc)
+    # Fall back to system /usr/share/novnc if present
+    candidates = [
+        os.path.join(VM_DIR, 'novnc'),
+        '/usr/share/novnc',
+        '/opt/novnc',
+        os.path.join(os.path.expanduser('~'), 'novnc'),
+    ]
+    for novnc_dir in candidates:
+        filepath = os.path.normpath(os.path.join(novnc_dir, filename))
+        if not filepath.startswith(os.path.normpath(novnc_dir)):
+            return "Forbidden", 403
+        if os.path.isfile(filepath):
+            mime = mimetypes.guess_type(filepath)[0] or 'application/octet-stream'
+            with open(filepath, 'rb') as f:
+                content = f.read()
+            return Response(content, mimetype=mime)
+    return f"noVNC file not found: {filename}. Run 'install_novnc' from vms.sh first.", 404
+
+
     mime = mimetypes.guess_type(filepath)[0] or 'application/octet-stream'
     with open(filepath, 'rb') as f:
         content = f.read()

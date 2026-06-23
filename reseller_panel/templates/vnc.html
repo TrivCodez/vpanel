@@ -574,6 +574,19 @@ document.addEventListener('click', (e) => {
     if (CLIPBOARD_PANEL && !e.target.closest('#clipboardGroup')) CLIPBOARD_PANEL.classList.add('hidden');
 });
 
+// Detect if noVNC module loaded — if not, show install instructions
+window.addEventListener('error', function(e) {
+    if (e.message && (e.message.includes('rfb') || e.message.includes('novnc') || e.message.includes('import'))) {
+        const ov = document.getElementById('novncOverlay');
+        if (ov) ov.innerHTML = `
+            <div class="text-center px-8 max-w-lg">
+                <div class="text-4xl mb-3 text-red-400"><i class="fas fa-puzzle-piece"></i></div>
+                <div class="text-gray-200 text-sm font-semibold mb-2">noVNC not installed</div>
+                <div class="text-gray-500 text-xs mb-4">The noVNC library is missing. Run <code class="text-orange-400">install_novnc</code> from <code class="text-orange-400">vms.sh</code> on the server first.</div>
+            </div>`;
+    }
+}, true);
+
 // Auto-connect on load
 if (WS_PORT && WS_HOST) {
     connect();
