@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -o pipefail
 
 VERSION="1.0.0"
 APP_DIR="/root/reseller_panel"
@@ -53,8 +53,6 @@ install_python_deps() {
     pip3 install flask flask-sock pyotp qrcode[pil] werkzeug jinja2
 }
 
-git clone https://github.com/nobita329/vpanel.git
-shopt -s dotglob && mv /root/vpanel/* /root/ && rm -rf /root/vpanel
 clone_repo() {
     if [[ -d "$APP_DIR/.git" ]]; then
         echo -e "${YELLOW}[*] Updating vPanel repository...${NC}"

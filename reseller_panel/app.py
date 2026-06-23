@@ -477,6 +477,9 @@ def ssh_websocket(ws, uuid):
         'sshpass', '-p', password,
         'ssh', '-o', 'StrictHostKeyChecking=no',
         '-o', 'UserKnownHostsFile=/dev/null',
+        '-o', 'ConnectTimeout=30',
+        '-o', 'ServerAliveInterval=15',
+        '-o', 'ServerAliveCountMax=3',
         '-p', str(ssh_port),
         f'{username}@localhost',
         '-t', 'bash --login'
@@ -1346,7 +1349,29 @@ def background_create_vm(vm_uuid, img_url, img_file, seed_file, disk_size, usern
                 subprocess.run(['wget', '-q', '-O', base_img, img_url], check=True, timeout=300)
             disk_sz = disk_size if disk_size.endswith(('G','M','T')) else f"{disk_size}G"
             subprocess.run(['qemu-img', 'create', '-f', 'qcow2', '-b', base_img, '-F', 'qcow2', img_file, disk_sz], check=True, capture_output=True, timeout=60)
-        user_data = f"""#cloud-config\nhostname: {hostname}\ndisable_root: false\nusers:\n  - name: {username}\n    sudo: ALL=(ALL) NOPASSWD:ALL\n    shell: /bin/bash\n    lock_passwd: false\nchpasswd:\n  list: |\n    {username}:{password}\n  expire: false\nssh_pwauth: true\npackage_update: false\nruncmd:\n  - sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config\n  - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config\n  - systemctl restart sshd || systemctl restart ssh\n"""
+        user_data = (
+            "#cloud-config\n"
+            f"hostname: {hostname}\n"
+            "ssh_pwauth: true\n"
+            "disable_root: false\n"
+            "chpasswd:\n"
+            "  expire: false\n"
+            "  list: |\n"
+            f"    root:{password}\n"
+            f"    {username}:{password}\n"
+            "users:\n"
+            "  - name: root\n"
+            "    lock_passwd: false\n"
+            f"  - name: {username}\n"
+            "    sudo: ALL=(ALL) NOPASSWD:ALL\n"
+            "    shell: /bin/bash\n"
+            "    lock_passwd: false\n"
+            "package_update: false\n"
+            "runcmd:\n"
+            "  - sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config\n"
+            "  - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config\n"
+            "  - systemctl restart sshd || systemctl restart ssh\n"
+        )
         with open('/tmp/seed-user-data', 'w') as f: f.write(user_data)
         with open('/tmp/seed-meta-data', 'w') as f: f.write(f"instance-id: {vm_uuid}\nlocal-hostname: {hostname}\n")
         subprocess.run(['cloud-localds', seed_file, '/tmp/seed-user-data', '/tmp/seed-meta-data'], check=True, capture_output=True, timeout=30)
@@ -1389,7 +1414,7 @@ def _start_vm_internal(uuid, conn=None):
             if close_conn: conn.close()
             return False
         vnc_port = get_available_port()
-        ws_port = get_available_port(vnc_port + 1)
+        ws_port = get_available_port(6001, 7000)
         cpu_string = CPU_MODELS.get(vm['cpu_model'], 'host')
         kvm = check_kvm()
         cmd = ['qemu-system-x86_64', '-name', f'vpanel-{uuid}',
@@ -1412,13 +1437,6 @@ def _start_vm_internal(uuid, conn=None):
         with open(ws_log, 'w') as wsf:
             subprocess.Popen(['websockify', str(ws_port), f'127.0.0.1:{vnc_port}'],
                            stdout=wsf, stderr=wsf)
-        time.sleep(0.5)
-        ws_check = subprocess.run(['pgrep', '-af', f'websockify.*{ws_port}'], capture_output=True, text=True, timeout=5)
-        if not ws_check.stdout.strip():
-            with open(ws_log, 'w') as wsf:
-                subprocess.Popen(['websockify', str(ws_port), f'127.0.0.1:{vnc_port}'],
-                               stdout=wsf, stderr=wsf)
-            time.sleep(0.5)
         conn.execute("UPDATE vms SET status='running',vnc_port=?,ws_port=?,started_at=CURRENT_TIMESTAMP WHERE uuid=?", (vnc_port, ws_port, uuid))
         conn.commit()
         try:
@@ -1530,7 +1548,8 @@ def run_ssh_command(vm_uuid, command):
         import paramiko
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect('127.0.0.1', port=vm['ssh_port'], username=vm['username'], password=vm['password'], timeout=10)
+        ssh.connect('127.0.0.1', port=vm['ssh_port'], username=vm['username'], password=vm['password'],
+                    timeout=15, banner_timeout=30, auth_timeout=15)
         ssh.exec_command(command, timeout=30)
         ssh.close()
     except Exception:
@@ -3442,13 +3461,6 @@ def auto_detect_loop():
                     subprocess.run(['pkill', '-f', f'websockify.*{vm["ws_port"]}'], capture_output=True, timeout=10)
                     conn.execute("UPDATE vms SET status='stopped',vnc_port=NULL,ws_port=NULL WHERE uuid=?", (vm['uuid'],))
                     log_activity(None, f'auto-detected stopped VM: {vm["uuid"]}')
-                elif vm['ws_port']:
-                    ws_check = subprocess.run(['pgrep', '-af', f'websockify.*{vm["ws_port"]}'], capture_output=True, text=True, timeout=5)
-                    if not ws_check.stdout.strip():
-                        ws_log = os.path.join(VM_DIR, f'{vm["uuid"]}-ws.log')
-                        with open(ws_log, 'w') as wsf:
-                            subprocess.Popen(['websockify', str(vm['ws_port']), f'127.0.0.1:{vm["vnc_port"]}'],
-                                           stdout=wsf, stderr=wsf)
             # Also detect orphaned QEMU processes without running VMs
             running_uuids = {vm['uuid'] for vm in stale if is_vm_running(vm['uuid'])}
             pgrep = subprocess.run(['pgrep', '-af', 'vpanel-'], capture_output=True, text=True, timeout=5)
