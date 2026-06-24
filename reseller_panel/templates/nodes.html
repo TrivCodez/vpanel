@@ -34,13 +34,13 @@
         <div class="mt-4 pt-4 border-t border-gray-800/50 flex items-center justify-between text-sm">
             <span class="text-gray-500">{{ n.vm_count }} VMs · <span class="text-green-400">{{ n.running_vms }} running</span></span>
             <div class="flex space-x-2">
-                <a href="/nodes/{{ n.id }}" class="text-orange-400 hover:text-orange-300 transition"><i class="fas fa-eye"></i></a>
+                <a href="/nodes/{{ n.id }}" class="text-blue-400 hover:text-blue-300 transition"><i class="fas fa-eye"></i></a>
                 <button onclick="deleteNode({{ n.id }})" class="text-red-400 hover:text-red-300 transition"><i class="fas fa-trash-can"></i></button>
             </div>
         </div>
     </div>
     {% endfor %}
-    {% if not nodes %}<div class="col-span-full text-center py-16 text-gray-600">No nodes configured. <a href="/nodes/create" class="text-orange-400 hover:text-orange-300 font-medium">Add your first node</a></div>{% endif %}
+    {% if not nodes %}<div class="col-span-full text-center py-16 text-gray-600">No nodes configured. <a href="/nodes/create" class="text-blue-400 hover:text-blue-300 font-medium">Add your first node</a></div>{% endif %}
 </div>
 <script>
 function deleteNode(id){if(!confirm('Delete this node? All VMs on this node must be moved first.'))return;const btns=document.querySelectorAll('button[onclick*="deleteNode"]');btns.forEach(b=>{b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';});fetch('/api/node/'+id+'/delete',{method:'POST'}).then(r=>r.json()).then(d=>{showToast(d.message||'Deleted',d.success?'success':'error');if(d.success)setTimeout(()=>location.reload(),1000);else btns.forEach(b=>{b.disabled=false;b.innerHTML='<i class="fas fa-trash-can"></i>';});});}

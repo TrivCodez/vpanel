@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o pipefail
+set -euo pipefail
 
 VERSION="1.0.0"
 APP_DIR="/root/reseller_panel"

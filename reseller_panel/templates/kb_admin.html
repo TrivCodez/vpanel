@@ -29,7 +29,7 @@
 </div>
 
 <div class="card rounded-xl p-6 animate-in">
-    <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-file-lines text-orange-400"></i>Articles</h2>
+    <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-file-lines text-blue-400"></i>Articles</h2>
     {% if articles %}
     <div class="overflow-x-auto">
         <table class="w-full">
@@ -44,7 +44,7 @@
                     <td class="p-3 text-sm text-gray-500">{{ article.created_at[:10] }}</td>
                     <td class="p-3 text-right">
                         <div class="flex justify-end gap-2">
-                            <button onclick="editArticle({{ article.id }})" class="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs hover:bg-orange-500/20">Edit</button>
+                            <button onclick="editArticle({{ article.id }})" class="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs hover:bg-blue-500/20">Edit</button>
                             <form method="POST" action="/admin/kb/{{ article.id }}/delete" onsubmit="return confirm('Delete this article?')">
                                 <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs hover:bg-red-500/20">Delete</button>
                             </form>

@@ -4,7 +4,7 @@
 export PATH="$HOME/.local/bin:$PATH"
 
 # Disable exit on error for better control
-set -o pipefail
+set -uo pipefail
 
 # Handle interrupt signals (Ctrl+C) - VMs keep running
 handle_interrupt() {
@@ -403,21 +403,6 @@ print_status() {
 }
 
 # Function to install noVNC and websockify
-# Non-interactive version of noVNC install (used when called from start_novnc_proxy)
-install_novnc_no_interactive() {
-    local novnc_dir="$VM_DIR/novnc"
-    if [ -d "$novnc_dir" ] && [ -f "$novnc_dir/vnc.html" ]; then
-        return 0
-    fi
-    mkdir -p "$novnc_dir"
-    if command -v git &> /dev/null; then
-        git clone --depth 1 https://github.com/novnc/noVNC.git "$novnc_dir" 2>/dev/null
-    fi
-    if ! command -v websockify &> /dev/null; then
-        pip3 install websockify --user 2>/dev/null && export PATH="$HOME/.local/bin:$PATH"
-    fi
-}
-
 install_novnc() {
     echo
     echo -e "${CYAN}${BOLD}╔═══════════════════════════════════════════════════════════╗${RESET}"
