@@ -242,7 +242,7 @@ def profile():
     totp_uri = ''
     qr_svg = ''
     if user.get('otp_secret') and not user.get('otp_enabled'):
-        totp_uri = pyotp.TOTP(user['otp_secret']).provisioning_uri(name=user['username'], issuer_name=get_settings().get('site_name', 'vPanel'))
+        totp_uri = pyotp.TOTP(user['otp_secret']).provisioning_uri(name=user['username'], issuer_name=get_settings().get('site_name', 'LavaDev'))
         img = qrcode.make(totp_uri, image_factory=qrcode.image.svg.SvgImage)
         import io
         buf = io.BytesIO()
@@ -1203,7 +1203,7 @@ def api_test_email():
     to_email = request.form.get('email', '').strip()
     if not to_email:
         return jsonify({'success': False, 'error': 'Email required'})
-    ok = send_email(to_email, 'Test from vPanel', 'This is a test email from your vPanel installation.\n\nIf you received this, SMTP is working correctly.')
+    ok = send_email(to_email, 'Test from LavaDev', 'This is a test email from your LavaDev installation.\n\nIf you received this, SMTP is working correctly.')
     return jsonify({'success': ok, 'message': 'Email sent' if ok else 'Failed to send email'})
 
 
@@ -1346,48 +1346,7 @@ def background_create_vm(vm_uuid, img_url, img_file, seed_file, disk_size, usern
                 subprocess.run(['wget', '-q', '-O', base_img, img_url], check=True, timeout=300)
             disk_sz = disk_size if disk_size.endswith(('G','M','T')) else f"{disk_size}G"
             subprocess.run(['qemu-img', 'create', '-f', 'qcow2', '-b', base_img, '-F', 'qcow2', img_file, disk_sz], check=True, capture_output=True, timeout=60)
-        # IMPORTANT: cloud-init user-data must (a) explicitly unlock root so
-        # the panel user can ssh as root, (b) include root in chpasswd, and
-        # (c) drop in an sshd_config.d override because modern Ubuntu/Debian
-        # cloud images override `ssh_pwauth` handling with their own
-        # /etc/ssh/sshd_config.d/50-cloud-init.conf that ships
-        # `PasswordAuthentication no` and `PermitRootLogin prohibit-password`.
-        user_data_lines = [
-            "#cloud-config",
-            "disable_root: false",
-            f"hostname: {hostname}",
-            "manage_etc_hosts: true",
-            "users:",
-            "  - name: root",
-            "    lock_passwd: false",
-        ]
-        if username and username != "root":
-            user_data_lines.extend([
-                f"  - name: {username}",
-                "    sudo: ALL=(ALL) NOPASSWD:ALL",
-                "    shell: /bin/bash",
-                "    lock_passwd: false",
-            ])
-        user_data_lines.extend([
-            "chpasswd:",
-            "  list: |",
-            f"    root:{password}",
-        ])
-        if username and username != "root":
-            user_data_lines.append(f"    {username}:{password}")
-        user_data_lines.extend([
-            "  expire: false",
-            "ssh_pwauth: true",
-            "package_update: false",
-            "runcmd:",
-            "  - [ -d /etc/ssh/sshd_config.d ] || mkdir -p /etc/ssh/sshd_config.d",
-            r"  - printf 'PasswordAuthentication yes\nPermitRootLogin yes\n' > /etc/ssh/sshd_config.d/99-vpanel.conf",
-            "  - sed -i 's/^\\s*#\\?\\s*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config 2>/dev/null || true",
-            "  - sed -i 's/^\\s*#\\?\\s*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config 2>/dev/null || true",
-            "  - systemctl enable ssh 2>/dev/null || systemctl enable sshd 2>/dev/null || true",
-            "  - systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null || true",
-        ])
-        user_data = "\n".join(user_data_lines) + "\n"
+        user_data = f"""#cloud-config\nhostname: {hostname}\nusers:\n  - name: {username}\n    sudo: ALL=(ALL) NOPASSWD:ALL\n    shell: /bin/bash\n    lock_passwd: false\nchpasswd:\n  list: |\n    {username}:{password}\n  expire: false\nssh_pwauth: true\npackage_update: false\n"""
         with open('/tmp/seed-user-data', 'w') as f: f.write(user_data)
         with open('/tmp/seed-meta-data', 'w') as f: f.write(f"instance-id: {vm_uuid}\nlocal-hostname: {hostname}\n")
         subprocess.run(['cloud-localds', seed_file, '/tmp/seed-user-data', '/tmp/seed-meta-data'], check=True, capture_output=True, timeout=30)
@@ -2020,7 +1979,7 @@ def api_connection_details(uuid):
         return jsonify({'success': False, 'error': 'VM not found'}), 404
     vm = dict(row)
     conn.close()
-    details = f"""vPanel Connection Details
+    details = f"""LavaDev Connection Details
 ==========================
 Name: {vm['name']}
 OS: {vm['os_type']} {vm['os_version']}
@@ -3520,7 +3479,7 @@ restore_thread.start()
 
 def run(host='0.0.0.0', port=8080):
     print(f"\033[1;32m============================================\033[0m")
-    print(f"\033[1;32m  vPanel Reseller System v2.0\033[0m")
+    print(f"\033[1;32m  LavaDev Cloud Platform v2.0\033[0m")
     print(f"\033[1;32m  Running on http://{host}:{port}\033[0m")
     print(f"\033[1;32m============================================\033[0m")
     print(f"\033[1;34m[ℹ] Default login: admin / admin@123\033[0m")

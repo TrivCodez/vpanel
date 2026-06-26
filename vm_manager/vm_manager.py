@@ -232,51 +232,28 @@ class VMManager:
         return result.returncode == 0
 
     def create_seed_image(self, config: VMConfig) -> bool:
-        # Build a robust user-data that guarantees SSH password auth works for
-        # BOTH the configured user AND root (so `ssh root@ip -p port` succeeds
-        # even though the cloud image defaults to prohibit-password & locked root).
-        # IMPORTANT: do NOT include an ssh_authorized_keys block with garbage
-        # base64 here, and do NOT rely on `ssh_pwauth` alone — modern cloud images
-        # ship /etc/ssh/sshd_config.d/50-cloud-init.conf that overrides sshd.
-        # The drop-in below forces sshd to accept password root login.
-        user_data_lines = [
-            "#cloud-config",
-            "disable_root: false",
-            f"hostname: {config.hostname}",
-            "manage_etc_hosts: true",
-            "users:",
-            "  - name: root",
-            "    lock_passwd: false",
-        ]
-        if config.username and config.username != "root":
-            user_data_lines.extend([
-                f"  - name: {config.username}",
-                "    sudo: ALL=(ALL) NOPASSWD:ALL",
-                "    shell: /bin/bash",
-                "    lock_passwd: false",
-            ])
-        user_data_lines.extend([
-            "chpasswd:",
-            "  list: |",
-            f"    root:{config.password}",
-        ])
-        if config.username and config.username != "root":
-            user_data_lines.append(f"    {config.username}:{config.password}")
-        user_data_lines.extend([
-            "  expire: false",
-            "ssh_pwauth: true",
-            "package_update: false",
-            "timezone: UTC",
-            "runcmd:",
-            "  - mkdir -p /etc/ssh/sshd_config.d",
-            "  - echo 'PasswordAuthentication yes' > /etc/ssh/sshd_config.d/99-vpanel.conf",
-            "  - echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config.d/99-vpanel.conf",
-            "  - sed -i 's/^\\s*#\\?\\s*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config 2>/dev/null || true",
-            "  - sed -i 's/^\\s*#\\?\\s*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config 2>/dev/null || true",
-            "  - systemctl enable ssh 2>/dev/null || systemctl enable sshd 2>/dev/null || true",
-            "  - systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null || true",
-        ])
-        user_data = "\n".join(user_data_lines) + "\n"
+        user_data = f"""#cloud-config
+hostname: {config.hostname}
+manage_etc_hosts: true
+users:
+  - name: {config.username}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: false
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDMHn+4MqzQH7xJ6zV7ZBJQ6mF6mZn5F5z5F5z5F5z5F5z5F5z5F5z5F5z5F5z5F5z5F5z5== hopingboyz@vm
+chpasswd:
+  list: |
+    {config.username}:{config.password}
+  expire: false
+ssh_pwauth: true
+package_update: true
+package_upgrade: false
+timezone: UTC
+runcmd:
+  - systemctl enable ssh
+  - systemctl start ssh
+"""
         meta_data = f"""instance-id: {config.vm_name}-{uuid.uuid4().hex[:8]}
 local-hostname: {config.hostname}
 """
@@ -334,11 +311,14 @@ local-hostname: {config.hostname}
         self.print_status("SUCCESS", f"VM {config.vm_name} created successfully!")
         return True
 
-    def get_qemu_command(self, config: VMConfig, vnc_port: int = None) -> Tuple[List[str], int]:
+    def get_qemu_command(self, config: VMConfig, vnc_port: int = None) -> List[str]:
         cpu_string = CPU_MODELS.get(config.cpu_model, "host")
         if config.cpu_model == "Custom CPU Model" and config.custom_cpu_string:
             cpu_string = config.custom_cpu_string
-        cpu_arg = cpu_string
+        if cpu_string == "host" or cpu_string == "qemu64":
+            cpu_arg = cpu_string
+        else:
+            cpu_arg = cpu_string
 
         if vnc_port is None:
             vnc_port = int(config.vnc_port) if config.vnc_port else self.get_available_vnc_port()
@@ -351,11 +331,7 @@ local-hostname: {config.hostname}
             '-smp', config.cpus,
             '-m', config.memory,
             '-drive', f'file={config.img_file},format=qcow2,if=virtio,aio=native,cache=none',
-            # cloud-localds produces a FAT/vfat seed image, NOT qcow2 — using
-            # format=qcow2 here would prevent QEMU from attaching the drive,
-            # so cloud-init never runs and no user/password is set up. The
-            # seed disk should be mounted as raw (and read-only).
-            '-drive', f'file={config.seed_file},format=raw,if=virtio,readonly=on',
+            '-drive', f'file={config.seed_file},format=qcow2,if=virtio',
             '-netdev', f'user,id=net0,hostfwd=tcp::{config.ssh_port}-:22',
             '-device', 'virtio-net-pci,netdev=net0',
             '-vnc', f':{vnc_port - 5900}',

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Status - {{ settings.get('site_name', 'vPanel') }}</title>
+    <title>System Status - {{ settings.get('site_name', 'LavaDev') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -31,7 +31,7 @@
         <div class="text-center mb-10">
             {% set logo = settings.get('site_logo', '') %}
             {% if logo %}<img src="{{ logo }}" class="h-12 mx-auto mb-4">{% endif %}
-            <h1 class="text-3xl font-bold">{{ settings.get('site_name', 'vPanel') }} Status</h1>
+            <h1 class="text-3xl font-bold">{{ settings.get('site_name', 'LavaDev') }} Status</h1>
             <p class="text-gray-500 mt-2">Real-time system health and performance metrics</p>
         </div>
 
@@ -135,7 +135,7 @@
         {% endif %}
 
         <div class="text-center text-sm text-gray-600 py-8">
-            {{ settings.get('footer_text', 'Powered by vPanel Reseller Platform') }}
+            {{ settings.get('footer_text', 'Powered by LavaDev Cloud Platform') }}
         </div>
     </div>
 </body>
